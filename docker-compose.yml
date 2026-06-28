@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
     image: seakee/cpa-manager:latest
     restart: unless-stopped
     ports:
