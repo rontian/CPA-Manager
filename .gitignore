@@ -42,3 +42,7 @@ TODO.md
 /data/usage.sqlite*
 /run/*.pid
 /run/*.log
+
+.env
+usage-service/config.json
+usage-service/data

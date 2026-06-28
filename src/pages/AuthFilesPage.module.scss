@@ -2062,3 +2062,21 @@
   color: var(--text-tertiary);
   font-family: inherit;
 }
+
+.modelAliasInput {
+  margin-left: auto;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: $radius-sm;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  width: 180px;
+  transition: all $transition-fast;
+
+  &:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+}
+

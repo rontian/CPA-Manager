@@ -70,6 +70,7 @@ import {
 } from '@/features/authFiles/uiState';
 import type { AuthJsonInputType } from '@/features/authFiles/sessionAuthConverter';
 import { useAuthStore, useNotificationStore, useQuotaStore, useThemeStore } from '@/stores';
+import { authFilesApi } from '@/services/api';
 import styles from './AuthFilesPage.module.scss';
 
 const easePower3Out = (progress: number) => 1 - (1 - progress) ** 4;
@@ -304,9 +305,23 @@ export function AuthFilesPage() {
     modelsFileName,
     modelsFileType,
     modelsError,
+    modelsFileItem,
     showModels,
     closeModelsModal,
   } = useAuthFilesModels();
+
+  const handleSaveAliases = useCallback(async (aliases: { name: string; alias: string }[]) => {
+    if (!modelsFileName) return;
+    try {
+      await authFilesApi.patchFields(modelsFileName, { 'model-aliases': aliases });
+      showNotification(t('notification.save_success', { defaultValue: '保存成功' }), 'success');
+      await loadFiles();
+      closeModelsModal();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '';
+      showNotification(`${t('notification.save_failed', { defaultValue: '保存失败' })}: ${errorMessage}`, 'error');
+    }
+  }, [modelsFileName, loadFiles, closeModelsModal, showNotification, t]);
 
   const {
     prefixProxyEditor,
@@ -1125,8 +1140,10 @@ export function AuthFilesPage() {
         error={modelsError}
         models={modelsList}
         excluded={excluded}
+        authFileItem={modelsFileItem}
         onClose={closeModelsModal}
         onCopyText={copyTextWithNotification}
+        onSaveAliases={handleSaveAliases}
       />
 
       <AuthFilesPrefixProxyEditorModal

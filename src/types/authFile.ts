@@ -41,6 +41,8 @@ export interface AuthFileItem {
   geminiVirtualProject?: string;
   recent_requests?: RecentRequestBucket[];
   recentRequests?: RecentRequestBucket[];
+  'model-aliases'?: { name: string; alias: string }[];
+  'excluded-models'?: string[];
   [key: string]: unknown;
 }
 

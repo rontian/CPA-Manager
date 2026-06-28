@@ -14,6 +14,7 @@ export type UseAuthFilesModelsResult = {
   modelsFileName: string;
   modelsFileType: string;
   modelsError: ModelsError;
+  modelsFileItem: AuthFileItem | null;
   showModels: (item: AuthFileItem) => Promise<void>;
   closeModelsModal: () => void;
 };
@@ -28,14 +29,17 @@ export function useAuthFilesModels(): UseAuthFilesModelsResult {
   const [modelsFileName, setModelsFileName] = useState('');
   const [modelsFileType, setModelsFileType] = useState('');
   const [modelsError, setModelsError] = useState<ModelsError>(null);
+  const [modelsFileItem, setModelsFileItem] = useState<AuthFileItem | null>(null);
   const modelsCacheRef = useRef<Map<string, AuthFileModelItem[]>>(new Map());
 
   const closeModelsModal = useCallback(() => {
     setModelsModalOpen(false);
+    setModelsFileItem(null);
   }, []);
 
   const showModels = useCallback(
     async (item: AuthFileItem) => {
+      setModelsFileItem(item);
       setModelsFileName(item.name);
       setModelsFileType(item.type || '');
       setModelsList([]);
@@ -79,6 +83,7 @@ export function useAuthFilesModels(): UseAuthFilesModelsResult {
     modelsFileName,
     modelsFileType,
     modelsError,
+    modelsFileItem,
     showModels,
     closeModelsModal
   };

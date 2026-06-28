@@ -18,6 +18,9 @@ export type AuthFileFieldsPatch = {
   headers?: Record<string, string>;
   priority?: number;
   note?: string;
+  'model-aliases'?: { name: string; alias: string }[];
+  'excluded-models'?: string[];
+  [key: string]: unknown;
 };
 type AuthFileBatchFailure = { name: string; error: string };
 type AuthFileBatchUploadResponse = {
