@@ -11,12 +11,15 @@ import {
   type AutoRouterConfig,
   type AutoRouterDecision,
   type AutoRouterRoleConfig,
+  type AutoRouterRolePresetConfig,
   type AutoRouterSessionSnapshot,
 } from '@/services/api/autoRouter';
 import {
   applyPresetToRole,
   AUTO_ROUTER_ROLE_PRESETS,
+  configPresetToPreset,
   createAutoModelWithRolePresets,
+  type AutoRouterRolePreset,
 } from '@/features/autoRouter/rolePresets';
 import type { Config, ModelAlias } from '@/types';
 import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
@@ -51,6 +54,17 @@ const updateRole = (
     ...model,
     roles: model.roles.map((role, index) => (index === roleIndex ? updater(role) : role)),
   }));
+
+const updateCustomPreset = (
+  config: AutoRouterConfig,
+  presetIndex: number,
+  updater: (preset: AutoRouterRolePresetConfig) => AutoRouterRolePresetConfig
+): AutoRouterConfig => ({
+  ...config,
+  'role-presets': (config['role-presets'] ?? []).map((preset, index) =>
+    index === presetIndex ? updater(preset) : preset
+  ),
+});
 
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error.message : typeof error === 'string' ? error : 'Request failed';
@@ -159,13 +173,42 @@ const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRoute
 };
 
 type ModelTab = 'basic' | 'brain' | 'session' | 'roles';
+type PresetTab = 'builtin' | 'custom';
 
 const modelTabs: ModelTab[] = ['basic', 'brain', 'session', 'roles'];
 
-const rolePresetOptions = AUTO_ROUTER_ROLE_PRESETS.map((preset) => ({
-  value: preset.id,
-  label: `${preset.name} (${preset.id})`,
-}));
+const createCustomPreset = (): AutoRouterRolePresetConfig => ({
+  id: 'custom-role',
+  name: '自定义角色',
+  description: '',
+  'cost-tier': 'medium',
+  priority: 0,
+  strengths: [],
+  'match-keywords': [],
+  'prompt-template': '',
+});
+
+const createUniquePresetId = (base: string, presets: AutoRouterRolePresetConfig[]) => {
+  const normalizedBase = (base || 'custom-role').trim() || 'custom-role';
+  const existing = new Set(presets.map((preset) => preset.id.trim()).filter(Boolean));
+  if (!existing.has(normalizedBase)) return normalizedBase;
+  for (let index = 2; index < 1000; index += 1) {
+    const candidate = `${normalizedBase}-${index}`;
+    if (!existing.has(candidate)) return candidate;
+  }
+  return `${normalizedBase}-${Date.now()}`;
+};
+
+const roleToCustomPreset = (role: AutoRouterRoleConfig): AutoRouterRolePresetConfig => ({
+  id: `${role.id || 'role'}-preset`,
+  name: role.name || role.id || '自定义角色',
+  description: role.description ?? '',
+  'cost-tier': role['cost-tier'] ?? 'medium',
+  priority: role.priority ?? 0,
+  strengths: [...(role.strengths ?? [])],
+  'match-keywords': [...(role['match-keywords'] ?? [])],
+  'prompt-template': role['prompt-template'] ?? '',
+});
 
 interface CandidateInputProps {
   id: string;
@@ -216,9 +259,26 @@ export function AutoRouterPage() {
   const [dryRunDecision, setDryRunDecision] = useState<AutoRouterDecision | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [activeModelTabs, setActiveModelTabs] = useState<Record<number, ModelTab>>({});
+  const [activePresetTab, setActivePresetTab] = useState<PresetTab>('builtin');
 
   const disabled = connectionStatus !== 'connected';
   const activeModels = useMemo(() => config.models.filter((model) => model.name.trim()), [config]);
+  const customPresets = useMemo(
+    () => (config['role-presets'] ?? []).map((preset) => configPresetToPreset(preset)),
+    [config]
+  );
+  const rolePresets = useMemo<AutoRouterRolePreset[]>(
+    () => [...AUTO_ROUTER_ROLE_PRESETS, ...customPresets],
+    [customPresets]
+  );
+  const rolePresetOptions = useMemo(
+    () =>
+      rolePresets.map((preset) => ({
+        value: `${preset.source}:${preset.id}`,
+        label: `${preset.name} (${preset.source === 'builtin' ? t('auto_router.preset_builtin') : t('auto_router.preset_custom')})`,
+      })),
+    [rolePresets, t]
+  );
   const backendCatalog = useMemo(
     () => buildBackendCatalog(managerConfig, config),
     [managerConfig, config]
@@ -318,11 +378,47 @@ export function AutoRouterPage() {
   };
 
   const applyRolePreset = (modelIndex: number, roleIndex: number, presetId: string) => {
-    const preset = AUTO_ROUTER_ROLE_PRESETS.find((item) => item.id === presetId);
+    const [source, id] = presetId.split(':');
+    const preset = rolePresets.find((item) => item.source === source && item.id === id);
     if (!preset) return;
     patchConfig((current) =>
       updateRole(current, modelIndex, roleIndex, (role) => applyPresetToRole(role, preset))
     );
+  };
+
+  const addCustomPreset = () => {
+    patchConfig((current) => ({
+      ...current,
+      'role-presets': [
+        ...(current['role-presets'] ?? []),
+        {
+          ...createCustomPreset(),
+          id: createUniquePresetId('custom-role', current['role-presets'] ?? []),
+        },
+      ],
+    }));
+    setActivePresetTab('custom');
+  };
+
+  const removeCustomPreset = (presetIndex: number) => {
+    patchConfig((current) => ({
+      ...current,
+      'role-presets': (current['role-presets'] ?? []).filter((_, index) => index !== presetIndex),
+    }));
+  };
+
+  const saveRoleAsCustomPreset = (role: AutoRouterRoleConfig) => {
+    patchConfig((current) => ({
+      ...current,
+      'role-presets': [
+        ...(current['role-presets'] ?? []),
+        {
+          ...roleToCustomPreset(role),
+          id: createUniquePresetId(`${role.id || 'role'}-preset`, current['role-presets'] ?? []),
+        },
+      ],
+    }));
+    setActivePresetTab('custom');
   };
 
   const refreshSessions = async () => {
@@ -772,6 +868,14 @@ export function AutoRouterPage() {
                                     }
                                   />
                                   <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() => saveRoleAsCustomPreset(role)}
+                                    disabled={disabled}
+                                  >
+                                    {t('auto_router.save_role_as_preset')}
+                                  </Button>
+                                  <Button
                                     variant="danger"
                                     size="sm"
                                     onClick={() => removeRole(modelIndex, roleIndex)}
@@ -954,6 +1058,201 @@ export function AutoRouterPage() {
                 );
               })}
             </div>
+          </section>
+
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <h2>{t('auto_router.presets_title')}</h2>
+                <p>{t('auto_router.presets_hint')}</p>
+              </div>
+              {activePresetTab === 'custom' && (
+                <Button variant="secondary" size="sm" onClick={addCustomPreset} disabled={disabled}>
+                  {t('auto_router.add_custom_preset')}
+                </Button>
+              )}
+            </div>
+            <div className={styles.presetTabs} role="tablist">
+              {(['builtin', 'custom'] as PresetTab[]).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  role="tab"
+                  aria-selected={activePresetTab === tab}
+                  className={`${styles.presetTab} ${
+                    activePresetTab === tab ? styles.presetTabActive : ''
+                  }`}
+                  onClick={() => setActivePresetTab(tab)}
+                >
+                  {t(`auto_router.presets_tabs.${tab}`)}
+                </button>
+              ))}
+            </div>
+
+            {activePresetTab === 'builtin' && (
+              <div className={styles.presetCards}>
+                {AUTO_ROUTER_ROLE_PRESETS.map((preset) => (
+                  <div className={styles.presetCard} key={preset.id}>
+                    <div className={styles.cardHeader}>
+                      <div>
+                        <h3>{preset.name}</h3>
+                        <p>{preset.description}</p>
+                      </div>
+                      <span className={styles.roleId}>{preset.id}</span>
+                    </div>
+                    <div className={styles.presetMeta}>
+                      <span>{preset.costTier}</span>
+                      <span>{t('auto_router.priority')}: {preset.priority}</span>
+                    </div>
+                    <div className={styles.hint}>{preset.strengths.join(' / ')}</div>
+                    <div className={styles.promptPreview}>{preset.promptTemplate}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activePresetTab === 'custom' && (
+              <div className={styles.presetCards}>
+                {(config['role-presets'] ?? []).length === 0 && (
+                  <div className={styles.emptyState}>{t('auto_router.no_custom_presets')}</div>
+                )}
+                {(config['role-presets'] ?? []).map((preset, presetIndex) => (
+                  <div className={styles.presetCard} key={`${preset.id}-${presetIndex}`}>
+                    <div className={styles.cardHeader}>
+                      <div>
+                        <h3>{preset.name || preset.id || t('auto_router.unnamed_preset')}</h3>
+                        <p>{preset.description || t('auto_router.custom_preset_hint')}</p>
+                      </div>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => removeCustomPreset(presetIndex)}
+                        disabled={disabled}
+                      >
+                        {t('common.delete')}
+                      </Button>
+                    </div>
+                    <div className={styles.formGrid}>
+                      <Input
+                        label={t('auto_router.preset_id')}
+                        value={preset.id}
+                        disabled={disabled}
+                        onChange={(event) =>
+                          patchConfig((current) =>
+                            updateCustomPreset(current, presetIndex, (item) => ({
+                              ...item,
+                              id: event.target.value,
+                            }))
+                          )
+                        }
+                      />
+                      <Input
+                        label={t('auto_router.preset_name')}
+                        value={preset.name ?? ''}
+                        disabled={disabled}
+                        onChange={(event) =>
+                          patchConfig((current) =>
+                            updateCustomPreset(current, presetIndex, (item) => ({
+                              ...item,
+                              name: event.target.value,
+                            }))
+                          )
+                        }
+                      />
+                      <Input
+                        label={t('auto_router.preset_description')}
+                        value={preset.description ?? ''}
+                        className={styles.fullWidth}
+                        disabled={disabled}
+                        onChange={(event) =>
+                          patchConfig((current) =>
+                            updateCustomPreset(current, presetIndex, (item) => ({
+                              ...item,
+                              description: event.target.value,
+                            }))
+                          )
+                        }
+                      />
+                      <Input
+                        label={t('auto_router.cost_tier')}
+                        value={preset['cost-tier'] ?? ''}
+                        disabled={disabled}
+                        onChange={(event) =>
+                          patchConfig((current) =>
+                            updateCustomPreset(current, presetIndex, (item) => ({
+                              ...item,
+                              'cost-tier': event.target.value,
+                            }))
+                          )
+                        }
+                      />
+                      <Input
+                        label={t('auto_router.priority')}
+                        type="number"
+                        value={String(preset.priority ?? 0)}
+                        disabled={disabled}
+                        onChange={(event) =>
+                          patchConfig((current) =>
+                            updateCustomPreset(current, presetIndex, (item) => ({
+                              ...item,
+                              priority: Number(event.target.value),
+                            }))
+                          )
+                        }
+                      />
+                      <div className={styles.textareaGroup}>
+                        <label>{t('auto_router.match_keywords')}</label>
+                        <textarea
+                          className={styles.textarea}
+                          value={listToText(preset['match-keywords'])}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateCustomPreset(current, presetIndex, (item) => ({
+                                ...item,
+                                'match-keywords': textToList(event.target.value),
+                              }))
+                            )
+                          }
+                        />
+                      </div>
+                      <div className={styles.textareaGroup}>
+                        <label>{t('auto_router.strengths')}</label>
+                        <textarea
+                          className={styles.textarea}
+                          value={listToText(preset.strengths)}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateCustomPreset(current, presetIndex, (item) => ({
+                                ...item,
+                                strengths: textToList(event.target.value),
+                              }))
+                            )
+                          }
+                        />
+                      </div>
+                      <div className={`${styles.textareaGroup} ${styles.fullWidth}`}>
+                        <label>{t('auto_router.role_prompt')}</label>
+                        <textarea
+                          className={styles.textarea}
+                          value={preset['prompt-template'] ?? ''}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateCustomPreset(current, presetIndex, (item) => ({
+                                ...item,
+                                'prompt-template': event.target.value,
+                              }))
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </div>
 

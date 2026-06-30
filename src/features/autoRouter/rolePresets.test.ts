@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   applyPresetToRole,
   AUTO_ROUTER_ROLE_PRESETS,
+  configPresetToPreset,
   createAutoModelWithRolePresets,
   createDefaultAutoRoles,
 } from './rolePresets';
@@ -62,5 +63,31 @@ describe('auto router role presets', () => {
     });
     expect(preset!.strengths).not.toContain('local-only');
     expect(preset!.matchKeywords).not.toContain('local-keyword');
+  });
+
+  it('normalizes custom config presets into copyable preset templates', () => {
+    const preset = configPresetToPreset({
+      id: 'custom-debug',
+      name: 'Custom Debug',
+      'cost-tier': 'high',
+      priority: 88,
+      strengths: ['logs'],
+      'match-keywords': ['panic'],
+      'prompt-template': 'diagnose',
+    });
+
+    expect(preset).toMatchObject({
+      id: 'custom-debug',
+      name: 'Custom Debug',
+      source: 'custom',
+      costTier: 'high',
+      priority: 88,
+      promptTemplate: 'diagnose',
+    });
+
+    preset.strengths.push('local-only');
+    expect(configPresetToPreset({ id: 'custom-debug', strengths: ['logs'] }).strengths).toEqual([
+      'logs',
+    ]);
   });
 });

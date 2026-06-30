@@ -37,6 +37,17 @@ export interface AutoRouterRoleConfig {
   disabled?: boolean;
 }
 
+export interface AutoRouterRolePresetConfig {
+  id: string;
+  name?: string;
+  description?: string;
+  'cost-tier'?: string;
+  priority?: number;
+  strengths?: string[];
+  'match-keywords'?: string[];
+  'prompt-template'?: string;
+}
+
 export interface AutoModelConfig {
   name: string;
   description?: string;
@@ -50,6 +61,7 @@ export interface AutoModelConfig {
 export interface AutoRouterConfig {
   enabled: boolean;
   models: AutoModelConfig[];
+  'role-presets'?: AutoRouterRolePresetConfig[];
 }
 
 export interface AutoRouterSessionSnapshot {
@@ -90,6 +102,7 @@ export interface AutoRouterDryRunResponse {
 const emptyAutoRouterConfig = (): AutoRouterConfig => ({
   enabled: false,
   models: [],
+  'role-presets': [],
 });
 
 export const createAutoModel = (): AutoModelConfig => ({

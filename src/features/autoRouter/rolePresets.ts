@@ -1,9 +1,14 @@
-import type { AutoModelConfig, AutoRouterRoleConfig } from '@/services/api/autoRouter';
+import type {
+  AutoModelConfig,
+  AutoRouterRoleConfig,
+  AutoRouterRolePresetConfig,
+} from '@/services/api/autoRouter';
 
 export interface AutoRouterRolePreset {
   id: string;
   name: string;
   description: string;
+  source: 'builtin' | 'custom';
   costTier: string;
   priority: number;
   strengths: string[];
@@ -16,6 +21,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'fast',
     name: '快速助手',
     description: '处理短问答、翻译、摘要、格式转换和低风险日常请求。',
+    source: 'builtin',
     costTier: 'low',
     priority: 10,
     strengths: ['短问答', '翻译', '总结', '格式转换', '低成本响应'],
@@ -38,6 +44,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'coding',
     name: '代码工程师',
     description: '处理代码实现、重构、仓库分析、测试补齐和开发任务拆解。',
+    source: 'builtin',
     costTier: 'high',
     priority: 100,
     strengths: ['代码实现', '重构', '仓库分析', '测试补齐', '开发任务拆解'],
@@ -66,6 +73,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'debugging',
     name: '调试诊断',
     description: '处理报错、日志、构建失败、运行异常和根因定位。',
+    source: 'builtin',
     costTier: 'high',
     priority: 95,
     strengths: ['错误诊断', '日志分析', '构建失败', '运行异常', '根因定位'],
@@ -93,6 +101,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'architecture',
     name: '架构方案',
     description: '处理系统设计、技术选型、模块边界、迁移方案和长期演进。',
+    source: 'builtin',
     costTier: 'high',
     priority: 80,
     strengths: ['系统设计', '技术选型', '模块边界', '迁移方案', '长期演进'],
@@ -117,6 +126,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'reviewer',
     name: '代码审查',
     description: '处理代码 Review、风险检查、回归风险、测试缺口和安全隐患。',
+    source: 'builtin',
     costTier: 'medium',
     priority: 70,
     strengths: ['代码审查', '风险检查', '回归风险', '测试缺口', '安全隐患'],
@@ -139,6 +149,7 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     id: 'docs',
     name: '文档说明',
     description: '处理 README、开发文档、配置说明、发布说明和用户操作步骤。',
+    source: 'builtin',
     costTier: 'medium',
     priority: 45,
     strengths: ['开发文档', '配置说明', 'README', '发布说明', '操作步骤'],
@@ -158,6 +169,33 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       '你是一个技术文档角色。优先把复杂配置、开发流程和操作步骤写得准确、可执行、易扫描。\n回答时保持结构清晰，区分背景、步骤、注意事项和验证方式。\n不要加入无法从上下文确认的承诺；如果某些命令或路径需要用户确认，请明确标出。',
   },
 ];
+
+export const configPresetToPreset = (
+  preset: AutoRouterRolePresetConfig
+): AutoRouterRolePreset => ({
+  id: preset.id,
+  name: preset.name ?? preset.id,
+  description: preset.description ?? '',
+  source: 'custom',
+  costTier: preset['cost-tier'] ?? 'medium',
+  priority: preset.priority ?? 0,
+  strengths: [...(preset.strengths ?? [])],
+  matchKeywords: [...(preset['match-keywords'] ?? [])],
+  promptTemplate: preset['prompt-template'] ?? '',
+});
+
+export const presetToConfigPreset = (
+  preset: AutoRouterRolePreset
+): AutoRouterRolePresetConfig => ({
+  id: preset.id,
+  name: preset.name,
+  description: preset.description,
+  'cost-tier': preset.costTier,
+  priority: preset.priority,
+  strengths: [...preset.strengths],
+  'match-keywords': [...preset.matchKeywords],
+  'prompt-template': preset.promptTemplate,
+});
 
 const presetToRole = (preset: AutoRouterRolePreset): AutoRouterRoleConfig => ({
   id: preset.id,
