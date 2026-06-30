@@ -39,7 +39,8 @@ TODO.md
 
 /bin/tmp/
 /bin/cpa-manager
-/data/usage.sqlite*
+/config.json
+/data/
 /run/*.pid
 /run/*.log
 

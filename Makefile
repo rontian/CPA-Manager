@@ -1,7 +1,9 @@
 .PHONY: help install dev dev-web dev-usage build test type-check lint format sync-config sync-config-dry
 
 PYTHON ?= python3
-USAGE_CONFIG ?= ./config.json
+# Interpreted from the usage-service directory. The default points to the
+# CPA-Manager repository root so config.json and data/ stay in one place.
+USAGE_CONFIG ?= ../config.json
 
 help:
 	@echo "CPA-Manager development commands"
