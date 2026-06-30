@@ -105,59 +105,6 @@ const emptyAutoRouterConfig = (): AutoRouterConfig => ({
   'role-presets': [],
 });
 
-export const createAutoModel = (): AutoModelConfig => ({
-  name: 'auto',
-  description: '稳定的角色模型路由器',
-  'default-role': 'fast',
-  fallback: {
-    provider: 'claude',
-    model: 'claude-sonnet-4-5',
-  },
-  brain: {
-    provider: '',
-    model: '',
-    temperature: 0,
-    'max-tokens': 512,
-  },
-  session: {
-    enabled: true,
-    ttl: '30m',
-    'switch-threshold': 0.85,
-    'max-switches': 3,
-    'switch-keywords': ['new task', 'new topic', 'switch to'],
-    'key-sources': [
-      'metadata.execution_session_id',
-      'headers.x-session-id',
-      'body.metadata.user_id',
-      'history-hash',
-    ],
-  },
-  roles: [
-    {
-      id: 'fast',
-      name: '快速助手',
-      provider: 'gemini',
-      model: 'gemini-2.5-flash',
-      'cost-tier': 'low',
-      priority: 10,
-      strengths: ['短问答', '翻译', '总结'],
-      'match-keywords': ['翻译', '总结', 'translate', 'summary'],
-      'prompt-template': '你是一个快速助手。请用清晰、简洁的方式回答。',
-    },
-    {
-      id: 'coding',
-      name: '代码助手',
-      provider: 'codex',
-      model: 'gpt-5-codex',
-      'cost-tier': 'high',
-      priority: 100,
-      strengths: ['代码修改', '调试', '仓库分析'],
-      'match-keywords': ['报错栈', 'docker', 'go test', 'stack trace'],
-      'prompt-template': '你是一个资深代码助手。请优先关注实现正确性和可验证性。',
-    },
-  ],
-});
-
 export const createAutoRole = (): AutoRouterRoleConfig => ({
   id: 'new-role',
   name: '新角色',
