@@ -2126,7 +2126,7 @@
     "role_description": "Role Description",
     "role_preset": "Role Preset",
     "role_preset_placeholder": "Select a preset",
-    "role_preset_hint": "Applying a preset fills the role name, description, cost tier, priority, keywords, strengths, and prompt template. It does not overwrite the backend or model.",
+    "role_preset_hint": "Applying a preset copies the template into the current role only. It does not link to or modify the original preset, and it does not overwrite the backend or model.",
     "role_provider": "Role Backend",
     "role_model": "Model",
     "cost_tier": "Cost Tier",
