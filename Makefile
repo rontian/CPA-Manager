@@ -1,11 +1,14 @@
-.PHONY: help install dev build test type-check lint format sync-config sync-config-dry
+.PHONY: help install dev dev-web dev-usage build test type-check lint format sync-config sync-config-dry
 
 PYTHON ?= python3
+USAGE_CONFIG ?= ./config.json
 
 help:
 	@echo "CPA-Manager development commands"
 	@echo "  make install          Install npm dependencies"
-	@echo "  make dev              Run the Vite dev server"
+	@echo "  make dev              Run Vite and usage-service together"
+	@echo "  make dev-web          Run only the Vite dev server"
+	@echo "  make dev-usage        Run only the usage-service"
 	@echo "  make build            Type-check and build"
 	@echo "  make test             Run tests"
 	@echo "  make type-check       Run TypeScript type-check"
@@ -18,7 +21,19 @@ install:
 	npm install
 
 dev:
+	@echo "Starting CPA-Manager web UI and usage-service. Press Ctrl+C to stop both."
+	@npm run dev & \
+	web_pid=$$!; \
+	( cd usage-service && CPA_MANAGER_CONFIG=$(USAGE_CONFIG) go run ./cmd/cpa-manager ) & \
+	usage_pid=$$!; \
+	trap 'kill $$web_pid $$usage_pid 2>/dev/null || true' INT TERM EXIT; \
+	wait $$web_pid $$usage_pid
+
+dev-web:
 	npm run dev
+
+dev-usage:
+	cd usage-service && CPA_MANAGER_CONFIG=$(USAGE_CONFIG) go run ./cmd/cpa-manager
 
 build:
 	npm run build
