@@ -94,7 +94,7 @@ const emptyAutoRouterConfig = (): AutoRouterConfig => ({
 
 export const createAutoModel = (): AutoModelConfig => ({
   name: 'auto',
-  description: 'Stable role-based model router',
+  description: '稳定的角色模型路由器',
   'default-role': 'fast',
   fallback: {
     provider: 'claude',
@@ -122,32 +122,32 @@ export const createAutoModel = (): AutoModelConfig => ({
   roles: [
     {
       id: 'fast',
-      name: 'Fast Agent',
+      name: '快速助手',
       provider: 'gemini',
       model: 'gemini-2.5-flash',
       'cost-tier': 'low',
       priority: 10,
-      strengths: ['short Q&A', 'translation', 'summary'],
-      'match-keywords': ['translate', 'summary'],
-      'prompt-template': 'You are a fast assistant. Answer clearly and concisely.',
+      strengths: ['短问答', '翻译', '总结'],
+      'match-keywords': ['翻译', '总结', 'translate', 'summary'],
+      'prompt-template': '你是一个快速助手。请用清晰、简洁的方式回答。',
     },
     {
       id: 'coding',
-      name: 'Coding Agent',
+      name: '代码助手',
       provider: 'codex',
       model: 'gpt-5-codex',
       'cost-tier': 'high',
       priority: 100,
-      strengths: ['code editing', 'debugging', 'repo analysis'],
-      'match-keywords': ['stack trace', 'docker', 'go test'],
-      'prompt-template': 'You are a senior coding assistant. Focus on implementation correctness.',
+      strengths: ['代码修改', '调试', '仓库分析'],
+      'match-keywords': ['报错栈', 'docker', 'go test', 'stack trace'],
+      'prompt-template': '你是一个资深代码助手。请优先关注实现正确性和可验证性。',
     },
   ],
 });
 
 export const createAutoRole = (): AutoRouterRoleConfig => ({
   id: 'new-role',
-  name: 'New Role',
+  name: '新角色',
   provider: '',
   model: '',
   'cost-tier': 'medium',

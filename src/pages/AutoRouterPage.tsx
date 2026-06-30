@@ -47,6 +47,10 @@ const updateRole = (
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error.message : typeof error === 'string' ? error : 'Request failed';
 
+type ModelTab = 'basic' | 'brain' | 'session' | 'roles';
+
+const modelTabs: ModelTab[] = ['basic', 'brain', 'session', 'roles'];
+
 export function AutoRouterPage() {
   const { t } = useTranslation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
@@ -64,6 +68,7 @@ export function AutoRouterPage() {
   const [dryRunSession, setDryRunSession] = useState('preview-session');
   const [dryRunDecision, setDryRunDecision] = useState<AutoRouterDecision | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
+  const [activeModelTabs, setActiveModelTabs] = useState<Record<number, ModelTab>>({});
 
   const disabled = connectionStatus !== 'connected';
   const activeModels = useMemo(() => config.models.filter((model) => model.name.trim()), [config]);
@@ -238,463 +243,505 @@ export function AutoRouterPage() {
               {activeModels.length === 0 && (
                 <div className={styles.emptyState}>{t('auto_router.no_models')}</div>
               )}
-              {config.models.map((model, modelIndex) => (
-                <div className={styles.modelCard} key={`${model.name}-${modelIndex}`}>
-                  <div className={styles.cardHeader}>
-                    <div>
-                      <h3>{model.name || t('auto_router.unnamed_model')}</h3>
-                      <p>{model.description || t('auto_router.model_description_placeholder')}</p>
-                    </div>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={() => removeModel(modelIndex)}
-                      disabled={disabled}
-                    >
-                      {t('common.delete')}
-                    </Button>
-                  </div>
+              {config.models.map((model, modelIndex) => {
+                const activeTab = activeModelTabs[modelIndex] ?? 'basic';
 
-                  <div className={styles.formGrid}>
-                    <Input
-                      label={t('auto_router.model_name')}
-                      value={model.name}
-                      disabled={disabled}
-                      onChange={(event) =>
-                        patchConfig((current) =>
-                          updateModel(current, modelIndex, (item) => ({
-                            ...item,
-                            name: event.target.value,
-                          }))
-                        )
-                      }
-                    />
-                    <Input
-                      label={t('auto_router.default_role')}
-                      value={model['default-role'] ?? ''}
-                      disabled={disabled}
-                      onChange={(event) =>
-                        patchConfig((current) =>
-                          updateModel(current, modelIndex, (item) => ({
-                            ...item,
-                            'default-role': event.target.value,
-                          }))
-                        )
-                      }
-                    />
-                    <Input
-                      label={t('auto_router.description_label')}
-                      className={styles.fullWidth}
-                      value={model.description ?? ''}
-                      disabled={disabled}
-                      onChange={(event) =>
-                        patchConfig((current) =>
-                          updateModel(current, modelIndex, (item) => ({
-                            ...item,
-                            description: event.target.value,
-                          }))
-                        )
-                      }
-                    />
-                    <Input
-                      label={t('auto_router.fallback_provider')}
-                      value={model.fallback.provider}
-                      disabled={disabled}
-                      onChange={(event) =>
-                        patchConfig((current) =>
-                          updateModel(current, modelIndex, (item) => ({
-                            ...item,
-                            fallback: { ...item.fallback, provider: event.target.value },
-                          }))
-                        )
-                      }
-                    />
-                    <Input
-                      label={t('auto_router.fallback_model')}
-                      value={model.fallback.model}
-                      disabled={disabled}
-                      onChange={(event) =>
-                        patchConfig((current) =>
-                          updateModel(current, modelIndex, (item) => ({
-                            ...item,
-                            fallback: { ...item.fallback, model: event.target.value },
-                          }))
-                        )
-                      }
-                    />
-                  </div>
-
-                  <div className={styles.section}>
-                    <h3>{t('auto_router.brain_title')}</h3>
-                    <div className={styles.formGrid}>
-                      <Input
-                        label={t('auto_router.brain_provider')}
-                        value={model.brain.provider ?? ''}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              brain: { ...item.brain, provider: event.target.value },
-                            }))
-                          )
-                        }
-                      />
-                      <Input
-                        label={t('auto_router.brain_model')}
-                        value={model.brain.model ?? ''}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              brain: { ...item.brain, model: event.target.value },
-                            }))
-                          )
-                        }
-                      />
-                      <Input
-                        label={t('auto_router.temperature')}
-                        type="number"
-                        step="0.1"
-                        value={String(model.brain.temperature ?? 0)}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              brain: { ...item.brain, temperature: Number(event.target.value) },
-                            }))
-                          )
-                        }
-                      />
-                      <Input
-                        label={t('auto_router.max_tokens')}
-                        type="number"
-                        value={String(model.brain['max-tokens'] ?? 512)}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              brain: { ...item.brain, 'max-tokens': Number(event.target.value) },
-                            }))
-                          )
-                        }
-                      />
-                    </div>
-                    <div className={styles.textareaGroup}>
-                      <label>{t('auto_router.brain_prompt')}</label>
-                      <textarea
-                        className={styles.textarea}
-                        value={model.brain['prompt-template'] ?? ''}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              brain: { ...item.brain, 'prompt-template': event.target.value },
-                            }))
-                          )
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <div className={styles.section}>
-                    <h3>{t('auto_router.session_title')}</h3>
-                    <div className={styles.toolbar}>
-                      <ToggleSwitch
-                        checked={model.session.enabled}
-                        onChange={(enabled) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              session: { ...item.session, enabled },
-                            }))
-                          )
-                        }
-                        disabled={disabled}
-                        label={t('auto_router.session_enabled')}
-                      />
-                    </div>
-                    <div className={styles.formGrid}>
-                      <Input
-                        label={t('auto_router.session_ttl')}
-                        value={model.session.ttl ?? '30m'}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              session: { ...item.session, ttl: event.target.value },
-                            }))
-                          )
-                        }
-                      />
-                      <Input
-                        label={t('auto_router.switch_threshold')}
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="1"
-                        value={String(model.session['switch-threshold'] ?? 0.85)}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              session: {
-                                ...item.session,
-                                'switch-threshold': Number(event.target.value),
-                              },
-                            }))
-                          )
-                        }
-                      />
-                      <Input
-                        label={t('auto_router.max_switches')}
-                        type="number"
-                        min="0"
-                        value={String(model.session['max-switches'] ?? 3)}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateModel(current, modelIndex, (item) => ({
-                              ...item,
-                              session: {
-                                ...item.session,
-                                'max-switches': Number(event.target.value),
-                              },
-                            }))
-                          )
-                        }
-                      />
-                    </div>
-                    <div className={styles.formGrid}>
-                      <div className={styles.textareaGroup}>
-                        <label>{t('auto_router.key_sources')}</label>
-                        <textarea
-                          className={styles.textarea}
-                          value={listToText(model.session['key-sources'])}
-                          disabled={disabled}
-                          onChange={(event) =>
-                            patchConfig((current) =>
-                              updateModel(current, modelIndex, (item) => ({
-                                ...item,
-                                session: {
-                                  ...item.session,
-                                  'key-sources': textToList(event.target.value),
-                                },
-                              }))
-                            )
-                          }
-                        />
-                      </div>
-                      <div className={styles.textareaGroup}>
-                        <label>{t('auto_router.switch_keywords')}</label>
-                        <textarea
-                          className={styles.textarea}
-                          value={listToText(model.session['switch-keywords'])}
-                          disabled={disabled}
-                          onChange={(event) =>
-                            patchConfig((current) =>
-                              updateModel(current, modelIndex, (item) => ({
-                                ...item,
-                                session: {
-                                  ...item.session,
-                                  'switch-keywords': textToList(event.target.value),
-                                },
-                              }))
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className={styles.section}>
-                    <div className={styles.panelHeader}>
+                return (
+                  <div className={styles.modelCard} key={`${model.name}-${modelIndex}`}>
+                    <div className={styles.cardHeader}>
                       <div>
-                        <h3>{t('auto_router.roles_title')}</h3>
-                        <p>{t('auto_router.roles_hint')}</p>
+                        <h3>{model.name || t('auto_router.unnamed_model')}</h3>
+                        <p>{model.description || t('auto_router.model_description_placeholder')}</p>
                       </div>
                       <Button
-                        variant="secondary"
+                        variant="danger"
                         size="sm"
-                        onClick={() => addRole(modelIndex)}
+                        onClick={() => removeModel(modelIndex)}
                         disabled={disabled}
                       >
-                        {t('auto_router.add_role')}
+                        {t('common.delete')}
                       </Button>
                     </div>
-                    <div className={styles.rolesList}>
-                      {model.roles.map((role, roleIndex) => (
-                        <div className={styles.roleCard} key={`${role.id}-${roleIndex}`}>
-                          <div className={styles.cardHeader}>
-                            <div className={styles.roleTitle}>
-                              <h3>{role.name || role.id || t('auto_router.unnamed_role')}</h3>
-                              <span className={styles.roleId}>{role.id}</span>
-                            </div>
-                            <div className={styles.rowActions}>
-                              <ToggleSwitch
-                                checked={!role.disabled}
-                                onChange={(enabled) =>
-                                  patchConfig((current) =>
-                                    updateRole(current, modelIndex, roleIndex, (item) => ({
-                                      ...item,
-                                      disabled: !enabled,
-                                    }))
-                                  )
-                                }
-                                disabled={disabled}
-                                label={!role.disabled ? t('common.enabled') : t('common.disabled')}
-                              />
-                              <Button
-                                variant="danger"
-                                size="sm"
-                                onClick={() => removeRole(modelIndex, roleIndex)}
-                                disabled={disabled}
-                              >
-                                {t('common.delete')}
-                              </Button>
-                            </div>
-                          </div>
-                          <div className={styles.formGrid}>
-                            <Input
-                              label={t('auto_router.role_id')}
-                              value={role.id}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    id: event.target.value,
-                                  }))
-                                )
-                              }
-                            />
-                            <Input
-                              label={t('auto_router.role_name')}
-                              value={role.name ?? ''}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    name: event.target.value,
-                                  }))
-                                )
-                              }
-                            />
-                            <Input
-                              label={t('auto_router.role_provider')}
-                              value={role.provider}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    provider: event.target.value,
-                                  }))
-                                )
-                              }
-                            />
-                            <Input
-                              label={t('auto_router.role_model')}
-                              value={role.model}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    model: event.target.value,
-                                  }))
-                                )
-                              }
-                            />
-                            <Input
-                              label={t('auto_router.cost_tier')}
-                              value={role['cost-tier'] ?? ''}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    'cost-tier': event.target.value,
-                                  }))
-                                )
-                              }
-                            />
-                            <Input
-                              label={t('auto_router.priority')}
-                              type="number"
-                              value={String(role.priority ?? 0)}
-                              disabled={disabled}
-                              onChange={(event) =>
-                                patchConfig((current) =>
-                                  updateRole(current, modelIndex, roleIndex, (item) => ({
-                                    ...item,
-                                    priority: Number(event.target.value),
-                                  }))
-                                )
-                              }
-                            />
-                            <div className={styles.textareaGroup}>
-                              <label>{t('auto_router.match_keywords')}</label>
-                              <textarea
-                                className={styles.textarea}
-                                value={listToText(role['match-keywords'])}
-                                disabled={disabled}
-                                onChange={(event) =>
-                                  patchConfig((current) =>
-                                    updateRole(current, modelIndex, roleIndex, (item) => ({
-                                      ...item,
-                                      'match-keywords': textToList(event.target.value),
-                                    }))
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className={styles.textareaGroup}>
-                              <label>{t('auto_router.strengths')}</label>
-                              <textarea
-                                className={styles.textarea}
-                                value={listToText(role.strengths)}
-                                disabled={disabled}
-                                onChange={(event) =>
-                                  patchConfig((current) =>
-                                    updateRole(current, modelIndex, roleIndex, (item) => ({
-                                      ...item,
-                                      strengths: textToList(event.target.value),
-                                    }))
-                                  )
-                                }
-                              />
-                            </div>
-                            <div className={`${styles.textareaGroup} ${styles.fullWidth}`}>
-                              <label>{t('auto_router.role_prompt')}</label>
-                              <textarea
-                                className={styles.textarea}
-                                value={role['prompt-template'] ?? ''}
-                                disabled={disabled}
-                                onChange={(event) =>
-                                  patchConfig((current) =>
-                                    updateRole(current, modelIndex, roleIndex, (item) => ({
-                                      ...item,
-                                      'prompt-template': event.target.value,
-                                    }))
-                                  )
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
+
+                    <div className={styles.modelTabs} role="tablist">
+                      {modelTabs.map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          role="tab"
+                          aria-selected={activeTab === tab}
+                          className={`${styles.modelTab} ${
+                            activeTab === tab ? styles.modelTabActive : ''
+                          }`}
+                          onClick={() =>
+                            setActiveModelTabs((current) => ({
+                              ...current,
+                              [modelIndex]: tab,
+                            }))
+                          }
+                        >
+                          {t(`auto_router.tabs.${tab}`)}
+                        </button>
                       ))}
                     </div>
+
+                    {activeTab === 'basic' && (
+                      <div className={styles.formGrid}>
+                        <Input
+                          label={t('auto_router.model_name')}
+                          value={model.name}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateModel(current, modelIndex, (item) => ({
+                                ...item,
+                                name: event.target.value,
+                              }))
+                            )
+                          }
+                        />
+                        <Input
+                          label={t('auto_router.default_role')}
+                          value={model['default-role'] ?? ''}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateModel(current, modelIndex, (item) => ({
+                                ...item,
+                                'default-role': event.target.value,
+                              }))
+                            )
+                          }
+                        />
+                        <Input
+                          label={t('auto_router.description_label')}
+                          className={styles.fullWidth}
+                          value={model.description ?? ''}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateModel(current, modelIndex, (item) => ({
+                                ...item,
+                                description: event.target.value,
+                              }))
+                            )
+                          }
+                        />
+                        <Input
+                          label={t('auto_router.fallback_provider')}
+                          value={model.fallback.provider}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateModel(current, modelIndex, (item) => ({
+                                ...item,
+                                fallback: { ...item.fallback, provider: event.target.value },
+                              }))
+                            )
+                          }
+                        />
+                        <Input
+                          label={t('auto_router.fallback_model')}
+                          value={model.fallback.model}
+                          disabled={disabled}
+                          onChange={(event) =>
+                            patchConfig((current) =>
+                              updateModel(current, modelIndex, (item) => ({
+                                ...item,
+                                fallback: { ...item.fallback, model: event.target.value },
+                              }))
+                            )
+                          }
+                        />
+                        <div className={`${styles.hint} ${styles.fullWidth}`}>
+                          {t('auto_router.provider_hint')}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'brain' && (
+                      <div className={styles.section}>
+                        <h3>{t('auto_router.brain_title')}</h3>
+                        <div className={styles.formGrid}>
+                          <Input
+                            label={t('auto_router.brain_provider')}
+                            value={model.brain.provider ?? ''}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  brain: { ...item.brain, provider: event.target.value },
+                                }))
+                              )
+                            }
+                          />
+                          <Input
+                            label={t('auto_router.brain_model')}
+                            value={model.brain.model ?? ''}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  brain: { ...item.brain, model: event.target.value },
+                                }))
+                              )
+                            }
+                          />
+                          <Input
+                            label={t('auto_router.temperature')}
+                            type="number"
+                            step="0.1"
+                            value={String(model.brain.temperature ?? 0)}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  brain: { ...item.brain, temperature: Number(event.target.value) },
+                                }))
+                              )
+                            }
+                          />
+                          <Input
+                            label={t('auto_router.max_tokens')}
+                            type="number"
+                            value={String(model.brain['max-tokens'] ?? 512)}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  brain: {
+                                    ...item.brain,
+                                    'max-tokens': Number(event.target.value),
+                                  },
+                                }))
+                              )
+                            }
+                          />
+                        </div>
+                        <div className={styles.textareaGroup}>
+                          <label>{t('auto_router.brain_prompt')}</label>
+                          <textarea
+                            className={styles.textarea}
+                            value={model.brain['prompt-template'] ?? ''}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  brain: { ...item.brain, 'prompt-template': event.target.value },
+                                }))
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'session' && (
+                      <div className={styles.section}>
+                        <h3>{t('auto_router.session_title')}</h3>
+                        <div className={styles.toolbar}>
+                          <ToggleSwitch
+                            checked={model.session.enabled}
+                            onChange={(enabled) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  session: { ...item.session, enabled },
+                                }))
+                              )
+                            }
+                            disabled={disabled}
+                            label={t('auto_router.session_enabled')}
+                          />
+                        </div>
+                        <div className={styles.formGrid}>
+                          <Input
+                            label={t('auto_router.session_ttl')}
+                            value={model.session.ttl ?? '30m'}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  session: { ...item.session, ttl: event.target.value },
+                                }))
+                              )
+                            }
+                          />
+                          <Input
+                            label={t('auto_router.switch_threshold')}
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            max="1"
+                            value={String(model.session['switch-threshold'] ?? 0.85)}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  session: {
+                                    ...item.session,
+                                    'switch-threshold': Number(event.target.value),
+                                  },
+                                }))
+                              )
+                            }
+                          />
+                          <Input
+                            label={t('auto_router.max_switches')}
+                            type="number"
+                            min="0"
+                            value={String(model.session['max-switches'] ?? 3)}
+                            disabled={disabled}
+                            onChange={(event) =>
+                              patchConfig((current) =>
+                                updateModel(current, modelIndex, (item) => ({
+                                  ...item,
+                                  session: {
+                                    ...item.session,
+                                    'max-switches': Number(event.target.value),
+                                  },
+                                }))
+                              )
+                            }
+                          />
+                        </div>
+                        <div className={styles.formGrid}>
+                          <div className={styles.textareaGroup}>
+                            <label>{t('auto_router.key_sources')}</label>
+                            <textarea
+                              className={styles.textarea}
+                              value={listToText(model.session['key-sources'])}
+                              disabled={disabled}
+                              onChange={(event) =>
+                                patchConfig((current) =>
+                                  updateModel(current, modelIndex, (item) => ({
+                                    ...item,
+                                    session: {
+                                      ...item.session,
+                                      'key-sources': textToList(event.target.value),
+                                    },
+                                  }))
+                                )
+                              }
+                            />
+                          </div>
+                          <div className={styles.textareaGroup}>
+                            <label>{t('auto_router.switch_keywords')}</label>
+                            <textarea
+                              className={styles.textarea}
+                              value={listToText(model.session['switch-keywords'])}
+                              disabled={disabled}
+                              onChange={(event) =>
+                                patchConfig((current) =>
+                                  updateModel(current, modelIndex, (item) => ({
+                                    ...item,
+                                    session: {
+                                      ...item.session,
+                                      'switch-keywords': textToList(event.target.value),
+                                    },
+                                  }))
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'roles' && (
+                      <div className={styles.section}>
+                        <div className={styles.panelHeader}>
+                          <div>
+                            <h3>{t('auto_router.roles_title')}</h3>
+                            <p>{t('auto_router.roles_hint')}</p>
+                          </div>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => addRole(modelIndex)}
+                            disabled={disabled}
+                          >
+                            {t('auto_router.add_role')}
+                          </Button>
+                        </div>
+                        <div className={styles.rolesList}>
+                          {model.roles.map((role, roleIndex) => (
+                            <div className={styles.roleCard} key={`${role.id}-${roleIndex}`}>
+                              <div className={styles.cardHeader}>
+                                <div className={styles.roleTitle}>
+                                  <h3>{role.name || role.id || t('auto_router.unnamed_role')}</h3>
+                                  <span className={styles.roleId}>{role.id}</span>
+                                </div>
+                                <div className={styles.rowActions}>
+                                  <ToggleSwitch
+                                    checked={!role.disabled}
+                                    onChange={(enabled) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          disabled: !enabled,
+                                        }))
+                                      )
+                                    }
+                                    disabled={disabled}
+                                    label={
+                                      !role.disabled ? t('common.enabled') : t('common.disabled')
+                                    }
+                                  />
+                                  <Button
+                                    variant="danger"
+                                    size="sm"
+                                    onClick={() => removeRole(modelIndex, roleIndex)}
+                                    disabled={disabled}
+                                  >
+                                    {t('common.delete')}
+                                  </Button>
+                                </div>
+                              </div>
+                              <div className={styles.formGrid}>
+                                <Input
+                                  label={t('auto_router.role_id')}
+                                  value={role.id}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        id: event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.role_name')}
+                                  value={role.name ?? ''}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        name: event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.role_provider')}
+                                  value={role.provider}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        provider: event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.role_model')}
+                                  value={role.model}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        model: event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.cost_tier')}
+                                  value={role['cost-tier'] ?? ''}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        'cost-tier': event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.priority')}
+                                  type="number"
+                                  value={String(role.priority ?? 0)}
+                                  disabled={disabled}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        priority: Number(event.target.value),
+                                      }))
+                                    )
+                                  }
+                                />
+                                <div className={styles.textareaGroup}>
+                                  <label>{t('auto_router.match_keywords')}</label>
+                                  <textarea
+                                    className={styles.textarea}
+                                    value={listToText(role['match-keywords'])}
+                                    disabled={disabled}
+                                    onChange={(event) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          'match-keywords': textToList(event.target.value),
+                                        }))
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <div className={styles.textareaGroup}>
+                                  <label>{t('auto_router.strengths')}</label>
+                                  <textarea
+                                    className={styles.textarea}
+                                    value={listToText(role.strengths)}
+                                    disabled={disabled}
+                                    onChange={(event) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          strengths: textToList(event.target.value),
+                                        }))
+                                      )
+                                    }
+                                  />
+                                </div>
+                                <div className={`${styles.textareaGroup} ${styles.fullWidth}`}>
+                                  <label>{t('auto_router.role_prompt')}</label>
+                                  <textarea
+                                    className={styles.textarea}
+                                    value={role['prompt-template'] ?? ''}
+                                    disabled={disabled}
+                                    onChange={(event) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          'prompt-template': event.target.value,
+                                        }))
+                                      )
+                                    }
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         </div>
