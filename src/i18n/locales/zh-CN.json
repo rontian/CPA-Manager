@@ -43,6 +43,7 @@
     "alias": "别名",
     "failure": "失败",
     "unknown_error": "未知错误",
+    "all": "全部",
     "quota_update_required": "请更新 CPA 版本或检查更新",
     "quota_check_credential": "请检查凭证状态",
     "copy": "复制",
@@ -147,6 +148,7 @@
     "monitoring_center": "请求监控",
     "config_management": "配置面板",
     "auto_router": "Auto 模型",
+    "model_catalog": "模型能力",
     "logs": "日志查看",
     "system_info": "中心信息"
   },
@@ -2079,6 +2081,26 @@
     "copy_failed": "复制失败",
     "link_copied": "已复制"
   },
+  "model_catalog": {
+    "title": "模型能力清单",
+    "description": "按提供商查看主流模型能力、能力标签、适合角色、上下文窗口、多模态与视觉/图像生成支持。此页只做展示和简单搜索，不依赖 CLIProxyAPI 后端配置。",
+    "model_count": "{{count}} 个模型",
+    "provider_count": "{{count}} 个模型",
+    "search_label": "搜索模型",
+    "search_placeholder": "按模型、能力、角色或提供商说明搜索",
+    "tag_filter": "能力标签筛选",
+    "maintenance_title": "维护方式",
+    "maintenance_note": "当前清单是 CPA-Manager 前端静态数据，存放在 src/features/modelCatalog/modelCatalog.ts，由公开厂商资料人工整理并在合并时审查来源。它不写入 CLIProxyAPI 配置，也不调用管理 API。后续可以增加 AI 辅助刷新：配置 provider/model 后由模型检索官方资料并生成待审核补丁，而不是直接覆盖清单。",
+    "empty": "没有匹配的模型。",
+    "source": "来源",
+    "context_window": "上下文",
+    "multimodal": "多模态",
+    "vision": "视觉模型",
+    "image_generation": "图像生成",
+    "strengths": "擅长方向",
+    "role_fit": "适合角色",
+    "notes": "备注"
+  },
   "auto_router": {
     "title": "Auto 模型路由",
     "description": "配置一个可见的 auto 模型，由主脑或规则把请求分配给不同角色模型，并通过粘性会话保持多轮上下文稳定。",
@@ -2146,6 +2168,12 @@
     "role_provider": "角色后端类型",
     "role_model": "角色模型",
     "cost_tier": "成本等级",
+    "cost_tiers": {
+      "low": "低成本",
+      "medium": "中等成本",
+      "high": "高能力/高成本"
+    },
+    "model_recommendations": "推荐模型",
     "priority": "优先级",
     "match_keywords": "匹配关键词",
     "strengths": "擅长方向",

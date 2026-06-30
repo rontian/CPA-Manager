@@ -14,6 +14,7 @@ import { PageTransition } from '@/components/common/PageTransition';
 import { MainRoutes } from '@/router/MainRoutes';
 import {
   IconBot,
+  IconModelCluster,
   IconSidebarAuthFiles,
   IconSidebarConfig,
   IconSidebarDashboard,
@@ -48,6 +49,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   monitoring: <IconSidebarMonitor size={18} />,
   config: <IconSidebarConfig size={18} />,
   autoRouter: <IconBot size={18} />,
+  modelCatalog: <IconModelCluster size={18} />,
   logs: <IconSidebarLogs size={18} />,
   system: <IconSidebarSystem size={18} />,
 };
@@ -398,6 +400,7 @@ export function MainLayout() {
     { path: '/', label: t('nav.dashboard'), icon: sidebarIcons.dashboard },
     { path: '/config', label: t('nav.config_management'), icon: sidebarIcons.config },
     { path: '/auto-router', label: t('nav.auto_router'), icon: sidebarIcons.autoRouter },
+    { path: '/model-catalog', label: t('nav.model_catalog'), icon: sidebarIcons.modelCatalog },
     { path: '/ai-providers', label: t('nav.ai_providers'), icon: sidebarIcons.aiProviders },
     { path: '/auth-files', label: t('nav.auth_files'), icon: sidebarIcons.authFiles },
     { path: '/oauth', label: t('nav.oauth', { defaultValue: 'OAuth' }), icon: sidebarIcons.oauth },

@@ -43,6 +43,7 @@
     "alias": "Alias",
     "failure": "Failure",
     "unknown_error": "Unknown error",
+    "all": "All",
     "quota_update_required": "Please update the CPA version or check for updates",
     "quota_check_credential": "Please check the credential status",
     "copy": "Copy",
@@ -147,6 +148,7 @@
     "monitoring_center": "Request Monitoring",
     "config_management": "Config Panel",
     "auto_router": "Auto Model",
+    "model_catalog": "Model Catalog",
     "logs": "Logs Viewer",
     "system_info": "Management Center Info"
   },
@@ -2079,6 +2081,26 @@
     "copy_failed": "Copy failed",
     "link_copied": "Link copied to clipboard"
   },
+  "model_catalog": {
+    "title": "Model Capability Catalog",
+    "description": "Browse leading models by provider, capability tags, role fit, context window, multimodal support, and vision/image generation support. This page is display/search only and does not depend on CLIProxyAPI backend config.",
+    "model_count": "{{count}} models",
+    "provider_count": "{{count}} models",
+    "search_label": "Search models",
+    "search_placeholder": "Search by model, capability, role, or provider notes",
+    "tag_filter": "Capability tag filter",
+    "maintenance_title": "Maintenance",
+    "maintenance_note": "This catalog is static CPA-Manager frontend data stored in src/features/modelCatalog/modelCatalog.ts. It is manually curated from public provider docs during merges, does not write CLIProxyAPI config, and does not call Management APIs. A later AI-assisted refresh can use configured provider/model settings to research official sources and generate a reviewed patch instead of overwriting the catalog directly.",
+    "empty": "No models match the current filters.",
+    "source": "Source",
+    "context_window": "Context",
+    "multimodal": "Multimodal",
+    "vision": "Vision model",
+    "image_generation": "Image generation",
+    "strengths": "Strengths",
+    "role_fit": "Role fit",
+    "notes": "Notes"
+  },
   "auto_router": {
     "title": "Auto Model Router",
     "description": "Configure a visible auto model that uses a brain judge or rules to route requests to role models while sticky sessions keep multi-turn context stable.",
@@ -2146,6 +2168,12 @@
     "role_provider": "Role Backend",
     "role_model": "Model",
     "cost_tier": "Cost Tier",
+    "cost_tiers": {
+      "low": "Low cost",
+      "medium": "Medium cost",
+      "high": "High capability / high cost"
+    },
+    "model_recommendations": "Recommended models",
     "priority": "Priority",
     "match_keywords": "Match Keywords",
     "strengths": "Strengths",

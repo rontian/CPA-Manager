@@ -26,6 +26,7 @@ import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
 import styles from './AutoRouterPage.module.scss';
 
 const OPENAI_COMPATIBLE_PROVIDER_PREFIX = 'openai-compatible-';
+const COST_TIER_VALUES = ['low', 'medium', 'high'] as const;
 
 const listToText = (values?: string[]) => (Array.isArray(values) ? values.join('\n') : '');
 
@@ -108,11 +109,7 @@ type BackendCatalog = {
   allModels: string[];
 };
 
-const addProviderModels = (
-  catalog: BackendCatalog,
-  provider: string,
-  models: string[] = []
-) => {
+const addProviderModels = (catalog: BackendCatalog, provider: string, models: string[] = []) => {
   const normalizedProvider = provider.trim();
   if (!normalizedProvider) return;
   catalog.providers = uniqueStrings([...catalog.providers, normalizedProvider]);
@@ -153,7 +150,11 @@ const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRoute
   addProviderModels(catalog, 'openai-compatibility');
 
   (managerConfig?.openaiCompatibility ?? []).forEach((provider) => {
-    addProviderModels(catalog, openAICompatibleProviderKey(provider.name), collectModelNames(provider.models));
+    addProviderModels(
+      catalog,
+      openAICompatibleProviderKey(provider.name),
+      collectModelNames(provider.models)
+    );
   });
 
   autoConfig.models.forEach((model) => {
@@ -165,8 +166,8 @@ const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRoute
   catalog.providers = uniqueStrings(catalog.providers).sort((a, b) => a.localeCompare(b));
   catalog.allModels = uniqueStrings(catalog.allModels).sort((a, b) => a.localeCompare(b));
   Object.keys(catalog.modelsByProvider).forEach((provider) => {
-    catalog.modelsByProvider[provider] = uniqueStrings(catalog.modelsByProvider[provider]).sort((a, b) =>
-      a.localeCompare(b)
+    catalog.modelsByProvider[provider] = uniqueStrings(catalog.modelsByProvider[provider]).sort(
+      (a, b) => a.localeCompare(b)
     );
   });
   return catalog;
@@ -270,6 +271,14 @@ export function AutoRouterPage() {
   const rolePresets = useMemo<AutoRouterRolePreset[]>(
     () => [...AUTO_ROUTER_ROLE_PRESETS, ...customPresets],
     [customPresets]
+  );
+  const costTierOptions = useMemo(
+    () =>
+      COST_TIER_VALUES.map((value) => ({
+        value,
+        label: t(`auto_router.cost_tiers.${value}`),
+      })),
+    [t]
   );
   const rolePresetOptions = useMemo(
     () =>
@@ -973,19 +982,22 @@ export function AutoRouterPage() {
                                     )
                                   }
                                 />
-                                <Input
-                                  label={t('auto_router.cost_tier')}
-                                  value={role['cost-tier'] ?? ''}
-                                  disabled={disabled}
-                                  onChange={(event) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        'cost-tier': event.target.value,
-                                      }))
-                                    )
-                                  }
-                                />
+                                <div className={styles.presetSelectGroup}>
+                                  <label>{t('auto_router.cost_tier')}</label>
+                                  <Select
+                                    value={role['cost-tier'] ?? 'medium'}
+                                    options={costTierOptions}
+                                    disabled={disabled}
+                                    onChange={(value) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          'cost-tier': value,
+                                        }))
+                                      )
+                                    }
+                                  />
+                                </div>
                                 <Input
                                   label={t('auto_router.priority')}
                                   type="number"
@@ -1101,10 +1113,16 @@ export function AutoRouterPage() {
                       <span className={styles.roleId}>{preset.id}</span>
                     </div>
                     <div className={styles.presetMeta}>
-                      <span>{preset.costTier}</span>
-                      <span>{t('auto_router.priority')}: {preset.priority}</span>
+                      <span>{t(`auto_router.cost_tiers.${preset.costTier}`)}</span>
+                      <span>
+                        {t('auto_router.priority')}: {preset.priority}
+                      </span>
                     </div>
                     <div className={styles.hint}>{preset.strengths.join(' / ')}</div>
+                    <div className={styles.hint}>
+                      {t('auto_router.model_recommendations')}:{' '}
+                      {preset.modelRecommendations.join(' / ')}
+                    </div>
                     <div className={styles.promptPreview}>{preset.promptTemplate}</div>
                   </div>
                 ))}
@@ -1173,19 +1191,22 @@ export function AutoRouterPage() {
                           )
                         }
                       />
-                      <Input
-                        label={t('auto_router.cost_tier')}
-                        value={preset['cost-tier'] ?? ''}
-                        disabled={disabled}
-                        onChange={(event) =>
-                          patchConfig((current) =>
-                            updateCustomPreset(current, presetIndex, (item) => ({
-                              ...item,
-                              'cost-tier': event.target.value,
-                            }))
-                          )
-                        }
-                      />
+                      <div className={styles.presetSelectGroup}>
+                        <label>{t('auto_router.cost_tier')}</label>
+                        <Select
+                          value={preset['cost-tier'] ?? 'medium'}
+                          options={costTierOptions}
+                          disabled={disabled}
+                          onChange={(value) =>
+                            patchConfig((current) =>
+                              updateCustomPreset(current, presetIndex, (item) => ({
+                                ...item,
+                                'cost-tier': value,
+                              }))
+                            )
+                          }
+                        />
+                      </div>
                       <Input
                         label={t('auto_router.priority')}
                         type="number"

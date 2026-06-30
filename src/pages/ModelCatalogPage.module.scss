@@ -1,0 +1,256 @@
+@use '../styles/variables' as *;
+@use '../styles/mixins' as *;
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-lg;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  align-items: flex-start;
+
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.description {
+  margin: $spacing-xs 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.countBadge {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: $radius-md;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 360px) 1fr;
+  gap: $spacing-md;
+  align-items: end;
+  padding: $spacing-md;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  border-radius: $radius-lg;
+  background: color-mix(in srgb, var(--bg-secondary) 58%, transparent);
+
+  :global(.form-group) {
+    margin-bottom: 0;
+  }
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tagFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tagButton,
+.tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tagButton {
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+  }
+}
+
+.tagButtonActive {
+  border-color: var(--primary-color);
+  background: color-mix(in srgb, var(--primary-color) 12%, var(--bg-primary));
+  color: var(--primary-color);
+}
+
+.maintenanceNote {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  border-left: 3px solid var(--primary-color);
+  border-radius: $radius-md;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+
+  strong {
+    color: var(--text-primary);
+    white-space: nowrap;
+  }
+
+  @include mobile {
+    flex-direction: column;
+  }
+}
+
+.providerSection {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.providerHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+  align-items: flex-start;
+
+  h2 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 20px;
+  }
+
+  p {
+    margin: 6px 0 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  span {
+    flex: 0 0 auto;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+}
+
+.modelGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $spacing-md;
+
+  @include mobile {
+    grid-template-columns: 1fr;
+  }
+}
+
+.modelCard {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-md;
+  background: var(--bg-primary);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: $spacing-md;
+
+  h3 {
+    margin: 0 0 4px;
+    color: var(--text-primary);
+    font-size: 17px;
+  }
+
+  code {
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+
+  a {
+    flex: 0 0 auto;
+    color: var(--primary-color);
+    font-size: 12px;
+    text-decoration: none;
+  }
+}
+
+.summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+
+  div {
+    padding: 8px;
+    border-radius: $radius-sm;
+    background: var(--bg-secondary);
+  }
+
+  dt {
+    margin-bottom: 3px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+  }
+
+  dd {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+}
+
+.detailBlock {
+  h4 {
+    margin: 0 0 4px;
+    color: var(--text-primary);
+    font-size: 13px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+}
+
+.emptyState {
+  padding: $spacing-xl;
+  border: 1px dashed var(--border-color);
+  border-radius: $radius-md;
+  color: var(--text-secondary);
+  text-align: center;
+}

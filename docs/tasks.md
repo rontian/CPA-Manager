@@ -16,8 +16,13 @@
 - [x] Add custom role preset management backed by CLIProxyAPI `auto-router.role-presets`.
 - [x] Add dry-run route testing UI.
 - [x] Add sticky session listing and clearing UI.
+- [x] Add planning role preset, model recommendations, and constrained cost-tier selectors.
+- [x] Refresh built-in role model recommendations for current mainstream models.
+- [x] Add model capability catalog page grouped by provider.
+- [x] Expand model catalog capability tags beyond role examples into a broader taxonomy.
 
 ## Future Direction
 
 - [ ] Add a richer Auto Router trace view if CLIProxyAPI exposes runtime route traces.
 - [ ] Revisit Auto Router UI if upstream adds an overlapping official implementation.
+- [ ] Consider AI-assisted model catalog refresh that drafts reviewed catalog updates from official sources.

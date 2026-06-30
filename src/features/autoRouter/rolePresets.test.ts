@@ -36,6 +36,14 @@ describe('auto router role presets', () => {
     expect(role).not.toHaveProperty('preset-id');
   });
 
+  it('includes planning and model recommendations for every built-in preset', () => {
+    expect(AUTO_ROUTER_ROLE_PRESETS.some((item) => item.id === 'planning')).toBe(true);
+    for (const preset of AUTO_ROUTER_ROLE_PRESETS) {
+      expect(preset.modelRecommendations.length).toBeGreaterThanOrEqual(1);
+      expect(preset.modelRecommendations.length).toBeLessThanOrEqual(5);
+    }
+  });
+
   it('applies a preset as an editable copy and preserves selected backend target', () => {
     const preset = AUTO_ROUTER_ROLE_PRESETS.find((item) => item.id === 'debugging');
     expect(preset).toBeDefined();
