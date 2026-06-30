@@ -130,39 +130,49 @@
 
 .modelTabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 14px;
-  padding: 4px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
-  border-radius: 8px;
-  background: var(--bg-secondary);
+  gap: 6px;
+  margin: 20px -16px 22px;
+  padding: 0 28px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
   overflow-x: auto;
 }
 
 .modelTab {
+  position: relative;
   flex: 0 0 auto;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 6px;
+  min-width: 108px;
+  min-height: 54px;
+  margin-bottom: -1px;
+  padding: 0 24px;
+  border: 1px solid transparent;
+  border-bottom-color: color-mix(in srgb, var(--border-color) 82%, transparent);
+  border-radius: 10px 10px 0 0;
   background: transparent;
   color: var(--text-secondary);
   font: inherit;
-  font-size: 13px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  transition:
+    background-color 0.16s ease,
+    border-color 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .modelTab:hover {
   color: var(--text-primary);
-  background: color-mix(in srgb, var(--bg-primary) 72%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 68%, transparent);
+  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
 }
 
 .modelTabActive {
   color: var(--text-primary);
   background: var(--bg-primary);
-  box-shadow: 0 1px 3px color-mix(in srgb, #000 10%, transparent);
+  border-color: color-mix(in srgb, var(--border-color) 88%, transparent);
+  border-bottom-color: var(--bg-primary);
+  box-shadow: 0 -1px 8px color-mix(in srgb, #000 5%, transparent);
 }
 
 .fullWidth {
