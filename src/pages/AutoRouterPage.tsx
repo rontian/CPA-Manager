@@ -13,8 +13,11 @@ import {
   type AutoRouterRoleConfig,
   type AutoRouterSessionSnapshot,
 } from '@/services/api/autoRouter';
+import type { Config, ModelAlias } from '@/types';
 import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
 import styles from './AutoRouterPage.module.scss';
+
+const OPENAI_COMPATIBLE_PROVIDER_PREFIX = 'openai-compatible-';
 
 const listToText = (values?: string[]) => (Array.isArray(values) ? values.join('\n') : '');
 
@@ -47,14 +50,148 @@ const updateRole = (
 const normalizeError = (error: unknown) =>
   error instanceof Error ? error.message : typeof error === 'string' ? error : 'Request failed';
 
+const uniqueStrings = (values: string[]) => {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  values.forEach((value) => {
+    const trimmed = value.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    result.push(trimmed);
+  });
+  return result;
+};
+
+const openAICompatibleProviderKey = (name: string) => {
+  const normalized = name.trim().toLowerCase();
+  if (!normalized) return 'openai-compatibility';
+  if (
+    normalized === 'openai-compatibility' ||
+    normalized.startsWith(OPENAI_COMPATIBLE_PROVIDER_PREFIX)
+  ) {
+    return normalized;
+  }
+  return `${OPENAI_COMPATIBLE_PROVIDER_PREFIX}${normalized}`;
+};
+
+const collectModelNames = (models?: ModelAlias[]) =>
+  uniqueStrings(
+    (models ?? []).flatMap((model) => [
+      String(model.name ?? ''),
+      String(model.alias ?? ''),
+      String(model.testModel ?? ''),
+    ])
+  );
+
+type BackendCatalog = {
+  providers: string[];
+  modelsByProvider: Record<string, string[]>;
+  allModels: string[];
+};
+
+const addProviderModels = (
+  catalog: BackendCatalog,
+  provider: string,
+  models: string[] = []
+) => {
+  const normalizedProvider = provider.trim();
+  if (!normalizedProvider) return;
+  catalog.providers = uniqueStrings([...catalog.providers, normalizedProvider]);
+  catalog.modelsByProvider[normalizedProvider] = uniqueStrings([
+    ...(catalog.modelsByProvider[normalizedProvider] ?? []),
+    ...models,
+  ]);
+  catalog.allModels = uniqueStrings([...catalog.allModels, ...models]);
+};
+
+const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRouterConfig) => {
+  const catalog: BackendCatalog = {
+    providers: [],
+    modelsByProvider: {},
+    allModels: [],
+  };
+
+  addProviderModels(
+    catalog,
+    'gemini',
+    (managerConfig?.geminiApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
+  );
+  addProviderModels(
+    catalog,
+    'codex',
+    (managerConfig?.codexApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
+  );
+  addProviderModels(
+    catalog,
+    'claude',
+    (managerConfig?.claudeApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
+  );
+  addProviderModels(
+    catalog,
+    'vertex',
+    (managerConfig?.vertexApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
+  );
+  addProviderModels(catalog, 'openai-compatibility');
+
+  (managerConfig?.openaiCompatibility ?? []).forEach((provider) => {
+    addProviderModels(catalog, openAICompatibleProviderKey(provider.name), collectModelNames(provider.models));
+  });
+
+  autoConfig.models.forEach((model) => {
+    addProviderModels(catalog, model.fallback.provider, [model.fallback.model]);
+    addProviderModels(catalog, model.brain.provider ?? '', [model.brain.model ?? '']);
+    model.roles.forEach((role) => addProviderModels(catalog, role.provider, [role.model]));
+  });
+
+  catalog.providers = uniqueStrings(catalog.providers).sort((a, b) => a.localeCompare(b));
+  catalog.allModels = uniqueStrings(catalog.allModels).sort((a, b) => a.localeCompare(b));
+  Object.keys(catalog.modelsByProvider).forEach((provider) => {
+    catalog.modelsByProvider[provider] = uniqueStrings(catalog.modelsByProvider[provider]).sort((a, b) =>
+      a.localeCompare(b)
+    );
+  });
+  return catalog;
+};
+
 type ModelTab = 'basic' | 'brain' | 'session' | 'roles';
 
 const modelTabs: ModelTab[] = ['basic', 'brain', 'session', 'roles'];
+
+interface CandidateInputProps {
+  id: string;
+  label: string;
+  value: string;
+  options: string[];
+  disabled?: boolean;
+  onChange: (value: string) => void;
+}
+
+function CandidateInput({ id, label, value, options, disabled, onChange }: CandidateInputProps) {
+  const visibleOptions = uniqueStrings(options);
+  return (
+    <>
+      <Input
+        id={id}
+        label={label}
+        value={value}
+        disabled={disabled}
+        list={`${id}-options`}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <datalist id={`${id}-options`}>
+        {visibleOptions.map((option) => (
+          <option value={option} key={option} />
+        ))}
+      </datalist>
+    </>
+  );
+}
 
 export function AutoRouterPage() {
   const { t } = useTranslation();
   const connectionStatus = useAuthStore((state) => state.connectionStatus);
   const fetchConfig = useConfigStore((state) => state.fetchConfig);
+  const managerConfig = useConfigStore((state) => state.config);
   const { showNotification } = useNotificationStore();
 
   const [config, setConfig] = useState<AutoRouterConfig>({ enabled: false, models: [] });
@@ -72,6 +209,18 @@ export function AutoRouterPage() {
 
   const disabled = connectionStatus !== 'connected';
   const activeModels = useMemo(() => config.models.filter((model) => model.name.trim()), [config]);
+  const backendCatalog = useMemo(
+    () => buildBackendCatalog(managerConfig, config),
+    [managerConfig, config]
+  );
+  const getModelOptions = useCallback(
+    (provider: string) => {
+      const normalizedProvider = provider.trim();
+      if (!normalizedProvider) return backendCatalog.allModels;
+      return backendCatalog.modelsByProvider[normalizedProvider] ?? backendCatalog.allModels;
+    },
+    [backendCatalog]
+  );
   const statusLabel = disabled
     ? t('auto_router.status_disconnected')
     : loading
@@ -87,6 +236,7 @@ export function AutoRouterPage() {
       const [nextConfig, nextSessions] = await Promise.all([
         autoRouterApi.getConfig(),
         autoRouterApi.getSessions(),
+        fetchConfig(undefined, true),
       ]);
       setConfig(nextConfig);
       setSessions(nextSessions);
@@ -96,7 +246,7 @@ export function AutoRouterPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [fetchConfig]);
 
   useEffect(() => {
     void load();
@@ -327,28 +477,32 @@ export function AutoRouterPage() {
                             )
                           }
                         />
-                        <Input
+                        <CandidateInput
+                          id={`auto-router-fallback-provider-${modelIndex}`}
                           label={t('auto_router.fallback_provider')}
                           value={model.fallback.provider}
+                          options={backendCatalog.providers}
                           disabled={disabled}
-                          onChange={(event) =>
+                          onChange={(value) =>
                             patchConfig((current) =>
                               updateModel(current, modelIndex, (item) => ({
                                 ...item,
-                                fallback: { ...item.fallback, provider: event.target.value },
+                                fallback: { ...item.fallback, provider: value },
                               }))
                             )
                           }
                         />
-                        <Input
+                        <CandidateInput
+                          id={`auto-router-fallback-model-${modelIndex}`}
                           label={t('auto_router.fallback_model')}
                           value={model.fallback.model}
+                          options={getModelOptions(model.fallback.provider)}
                           disabled={disabled}
-                          onChange={(event) =>
+                          onChange={(value) =>
                             patchConfig((current) =>
                               updateModel(current, modelIndex, (item) => ({
                                 ...item,
-                                fallback: { ...item.fallback, model: event.target.value },
+                                fallback: { ...item.fallback, model: value },
                               }))
                             )
                           }
@@ -363,28 +517,32 @@ export function AutoRouterPage() {
                       <div className={styles.section}>
                         <h3>{t('auto_router.brain_title')}</h3>
                         <div className={styles.formGrid}>
-                          <Input
+                          <CandidateInput
+                            id={`auto-router-brain-provider-${modelIndex}`}
                             label={t('auto_router.brain_provider')}
                             value={model.brain.provider ?? ''}
+                            options={backendCatalog.providers}
                             disabled={disabled}
-                            onChange={(event) =>
+                            onChange={(value) =>
                               patchConfig((current) =>
                                 updateModel(current, modelIndex, (item) => ({
                                   ...item,
-                                  brain: { ...item.brain, provider: event.target.value },
+                                  brain: { ...item.brain, provider: value },
                                 }))
                               )
                             }
                           />
-                          <Input
+                          <CandidateInput
+                            id={`auto-router-brain-model-${modelIndex}`}
                             label={t('auto_router.brain_model')}
                             value={model.brain.model ?? ''}
+                            options={getModelOptions(model.brain.provider ?? '')}
                             disabled={disabled}
-                            onChange={(event) =>
+                            onChange={(value) =>
                               patchConfig((current) =>
                                 updateModel(current, modelIndex, (item) => ({
                                   ...item,
-                                  brain: { ...item.brain, model: event.target.value },
+                                  brain: { ...item.brain, model: value },
                                 }))
                               )
                             }
@@ -632,28 +790,32 @@ export function AutoRouterPage() {
                                     )
                                   }
                                 />
-                                <Input
+                                <CandidateInput
+                                  id={`auto-router-role-provider-${modelIndex}-${roleIndex}`}
                                   label={t('auto_router.role_provider')}
                                   value={role.provider}
+                                  options={backendCatalog.providers}
                                   disabled={disabled}
-                                  onChange={(event) =>
+                                  onChange={(value) =>
                                     patchConfig((current) =>
                                       updateRole(current, modelIndex, roleIndex, (item) => ({
                                         ...item,
-                                        provider: event.target.value,
+                                        provider: value,
                                       }))
                                     )
                                   }
                                 />
-                                <Input
+                                <CandidateInput
+                                  id={`auto-router-role-model-${modelIndex}-${roleIndex}`}
                                   label={t('auto_router.role_model')}
                                   value={role.model}
+                                  options={getModelOptions(role.provider)}
                                   disabled={disabled}
-                                  onChange={(event) =>
+                                  onChange={(value) =>
                                     patchConfig((current) =>
                                       updateRole(current, modelIndex, roleIndex, (item) => ({
                                         ...item,
-                                        model: event.target.value,
+                                        model: value,
                                       }))
                                     )
                                   }
