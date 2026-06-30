@@ -1,6 +1,5 @@
-.PHONY: help install dev dev-web dev-usage build test type-check lint format sync-config sync-config-dry
+.PHONY: help install dev dev-web dev-usage build test type-check lint format sync-config sync-config-dry tools build-sync-config
 
-PYTHON ?= python3
 # Interpreted from the usage-service directory. The default points to the
 # CPA-Manager repository root so config.json and data/ stay in one place.
 USAGE_CONFIG ?= ../config.json
@@ -18,6 +17,8 @@ help:
 	@echo "  make format           Format source files"
 	@echo "  make sync-config      Add missing keys to .env"
 	@echo "  make sync-config-dry  Preview config sync without writing"
+	@echo "  make tools            Build production helper binaries"
+	@echo "  make build-sync-config Build only sync-config helper binaries"
 
 install:
 	npm install
@@ -53,7 +54,18 @@ format:
 	npm run format
 
 sync-config:
-	$(PYTHON) ./scripts/sync-config.py --skip-yaml
+	cd tools/sync-config && go run . --skip-yaml --env ../../.env --env-example ../../.env.example
 
 sync-config-dry:
-	$(PYTHON) ./scripts/sync-config.py --skip-yaml --dry-run
+	cd tools/sync-config && go run . --skip-yaml --env ../../.env --env-example ../../.env.example --dry-run
+
+tools: build-sync-config
+
+build-sync-config:
+	cd tools/sync-config && \
+		CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../sync-config-linux-amd64 . && \
+		CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -ldflags='-s -w' -o ../sync-config-linux-arm64 . && \
+		CGO_ENABLED=0 GOOS=darwin GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../sync-config-darwin-amd64 . && \
+		CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath -ldflags='-s -w' -o ../sync-config-darwin-arm64 . && \
+		CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -ldflags='-s -w' -o ../sync-config-windows-amd64.exe . && \
+		CGO_ENABLED=0 GOOS=windows GOARCH=arm64 go build -trimpath -ldflags='-s -w' -o ../sync-config-windows-arm64.exe .

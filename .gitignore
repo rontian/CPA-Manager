@@ -19,6 +19,12 @@ style.md
 node_modules
 dist
 dist-ssr
+!tools/sync-config-linux-amd64
+!tools/sync-config-linux-arm64
+!tools/sync-config-darwin-amd64
+!tools/sync-config-darwin-arm64
+!tools/sync-config-windows-amd64.exe
+!tools/sync-config-windows-arm64.exe
 *.local
 skills
 .playwright-mcp/
