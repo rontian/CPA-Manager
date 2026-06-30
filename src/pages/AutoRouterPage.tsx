@@ -2,10 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import {
   autoRouterApi,
-  createAutoModel,
   createAutoRole,
   type AutoModelConfig,
   type AutoRouterConfig,
@@ -13,6 +13,11 @@ import {
   type AutoRouterRoleConfig,
   type AutoRouterSessionSnapshot,
 } from '@/services/api/autoRouter';
+import {
+  applyPresetToRole,
+  AUTO_ROUTER_ROLE_PRESETS,
+  createAutoModelWithRolePresets,
+} from '@/features/autoRouter/rolePresets';
 import type { Config, ModelAlias } from '@/types';
 import { useAuthStore, useConfigStore, useNotificationStore } from '@/stores';
 import styles from './AutoRouterPage.module.scss';
@@ -157,6 +162,11 @@ type ModelTab = 'basic' | 'brain' | 'session' | 'roles';
 
 const modelTabs: ModelTab[] = ['basic', 'brain', 'session', 'roles'];
 
+const rolePresetOptions = AUTO_ROUTER_ROLE_PRESETS.map((preset) => ({
+  value: preset.id,
+  label: `${preset.name} (${preset.id})`,
+}));
+
 interface CandidateInputProps {
   id: string;
   label: string;
@@ -278,7 +288,7 @@ export function AutoRouterPage() {
     patchConfig((current) => ({
       ...current,
       enabled: true,
-      models: [...current.models, createAutoModel()],
+      models: [...current.models, createAutoModelWithRolePresets()],
     }));
   };
 
@@ -304,6 +314,14 @@ export function AutoRouterPage() {
         ...model,
         roles: model.roles.filter((_, index) => index !== roleIndex),
       }))
+    );
+  };
+
+  const applyRolePreset = (modelIndex: number, roleIndex: number, presetId: string) => {
+    const preset = AUTO_ROUTER_ROLE_PRESETS.find((item) => item.id === presetId);
+    if (!preset) return;
+    patchConfig((current) =>
+      updateRole(current, modelIndex, roleIndex, (role) => applyPresetToRole(role, preset))
     );
   };
 
@@ -763,6 +781,23 @@ export function AutoRouterPage() {
                                   </Button>
                                 </div>
                               </div>
+                              <div className={styles.presetRow}>
+                                <div className={styles.presetSelectGroup}>
+                                  <label>{t('auto_router.role_preset')}</label>
+                                  <Select
+                                    value=""
+                                    options={rolePresetOptions}
+                                    placeholder={t('auto_router.role_preset_placeholder')}
+                                    onChange={(presetId) =>
+                                      applyRolePreset(modelIndex, roleIndex, presetId)
+                                    }
+                                    disabled={disabled}
+                                  />
+                                </div>
+                                <div className={styles.presetHint}>
+                                  {t('auto_router.role_preset_hint')}
+                                </div>
+                              </div>
                               <div className={styles.formGrid}>
                                 <Input
                                   label={t('auto_router.role_id')}
@@ -786,6 +821,20 @@ export function AutoRouterPage() {
                                       updateRole(current, modelIndex, roleIndex, (item) => ({
                                         ...item,
                                         name: event.target.value,
+                                      }))
+                                    )
+                                  }
+                                />
+                                <Input
+                                  label={t('auto_router.role_description')}
+                                  value={role.description ?? ''}
+                                  disabled={disabled}
+                                  className={styles.fullWidth}
+                                  onChange={(event) =>
+                                    patchConfig((current) =>
+                                      updateRole(current, modelIndex, roleIndex, (item) => ({
+                                        ...item,
+                                        description: event.target.value,
                                       }))
                                     )
                                   }

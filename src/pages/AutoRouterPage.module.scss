@@ -258,6 +258,38 @@
   font-weight: 700;
 }
 
+.presetRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 320px) minmax(0, 1fr);
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--border-color));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary-color) 5%, var(--bg-primary));
+}
+
+.presetSelectGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.presetSelectGroup label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.presetHint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+  padding-bottom: 3px;
+}
+
 .emptyState {
   padding: 22px;
   border: 1px dashed color-mix(in srgb, var(--border-color) 78%, transparent);
@@ -323,5 +355,9 @@
   .toolbar {
     width: 100%;
     align-items: stretch;
+  }
+
+  .presetRow {
+    grid-template-columns: 1fr;
   }
 }
