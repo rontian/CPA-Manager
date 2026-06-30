@@ -1,0 +1,271 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  padding-bottom: 28px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.description {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+.headerActions,
+.rowActions,
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
+  background: color-mix(in srgb, var(--bg-primary) 88%, transparent);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mainColumn,
+.sideColumn,
+.panel,
+.section,
+.roleCard,
+.modelCard {
+  min-width: 0;
+}
+
+.mainColumn,
+.sideColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.panel,
+.roleCard,
+.modelCard {
+  border: 1px solid color-mix(in srgb, var(--border-color) 84%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--bg-primary) 90%, transparent);
+}
+
+.panel {
+  padding: 18px;
+}
+
+.modelCard,
+.roleCard {
+  padding: 16px;
+}
+
+.panelHeader,
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.panelHeader h2,
+.cardHeader h3,
+.section h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.panelHeader p,
+.cardHeader p,
+.section p {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border-color) 76%, transparent);
+}
+
+.textareaGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.textareaGroup label {
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.textarea,
+.select {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.textarea {
+  min-height: 88px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.select {
+  min-height: 42px;
+  padding: 0 10px;
+}
+
+.hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.modelsList,
+.rolesList,
+.sessionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.roleTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.roleId {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.emptyState {
+  padding: 22px;
+  border: 1px dashed color-mix(in srgb, var(--border-color) 78%, transparent);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  text-align: center;
+  font-size: 14px;
+}
+
+.sessionItem,
+.decisionBox {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
+  background: var(--bg-secondary);
+}
+
+.sessionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.sessionItem strong,
+.decisionBox strong {
+  color: var(--text-primary);
+}
+
+.decisionBox {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.errorBox {
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #ef4444 36%, var(--border-color));
+  background: color-mix(in srgb, #ef4444 9%, var(--bg-primary));
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 980px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .headerActions,
+  .rowActions,
+  .toolbar {
+    width: 100%;
+    align-items: stretch;
+  }
+}

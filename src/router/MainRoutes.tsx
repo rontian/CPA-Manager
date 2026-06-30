@@ -19,6 +19,7 @@ import { QuotaPage } from '@/pages/QuotaPage';
 import { MonitoringCenterPage } from '@/pages/MonitoringCenterPage';
 import { CodexInspectionPage } from '@/pages/CodexInspectionPage';
 import { ConfigPage } from '@/pages/ConfigPage';
+import { AutoRouterPage } from '@/pages/AutoRouterPage';
 import { LogsPage } from '@/pages/LogsPage';
 import { SystemPage } from '@/pages/SystemPage';
 
@@ -76,6 +77,7 @@ const mainRoutes = [
   { path: '/monitoring', element: <MonitoringCenterPage /> },
   { path: '/monitoring/codex-inspection', element: <CodexInspectionPage /> },
   { path: '/config', element: <ConfigPage /> },
+  { path: '/auto-router', element: <AutoRouterPage /> },
   { path: '/logs', element: <LogsPage /> },
   { path: '/system', element: <SystemPage /> },
   { path: '*', element: <Navigate to="/" replace /> },
