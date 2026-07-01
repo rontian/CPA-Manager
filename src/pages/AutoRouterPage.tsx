@@ -99,11 +99,7 @@ const openAICompatibleProviderKey = (name: string) => {
 
 const collectModelNames = (models?: ModelAlias[]) =>
   uniqueStrings(
-    (models ?? []).flatMap((model) => [
-      String(model.name ?? ''),
-      String(model.alias ?? ''),
-      String(model.testModel ?? ''),
-    ])
+    (models ?? []).flatMap((model) => [String(model.name ?? ''), String(model.testModel ?? '')])
   );
 
 const collectDefinitionModelNames = (
