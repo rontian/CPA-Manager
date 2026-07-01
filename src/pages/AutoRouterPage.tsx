@@ -1146,20 +1146,21 @@ export function AutoRouterPage() {
                                         )
                                       }
                                     />
-                                    <Input
-                                      label={t('auto_router.role_description')}
-                                      value={role.description ?? ''}
-                                      disabled={disabled}
-                                      className={styles.fullWidth}
-                                      onChange={(event) =>
-                                        patchConfig((current) =>
-                                          updateRole(current, modelIndex, roleIndex, (item) => ({
-                                            ...item,
-                                            description: event.target.value,
-                                          }))
-                                        )
-                                      }
-                                    />
+                                    <div className={styles.fullWidth}>
+                                      <Input
+                                        label={t('auto_router.role_description')}
+                                        value={role.description ?? ''}
+                                        disabled={disabled}
+                                        onChange={(event) =>
+                                          patchConfig((current) =>
+                                            updateRole(current, modelIndex, roleIndex, (item) => ({
+                                              ...item,
+                                              description: event.target.value,
+                                            }))
+                                          )
+                                        }
+                                      />
+                                    </div>
                                     <CandidateInput
                                       id={`auto-router-role-provider-${modelIndex}-${roleIndex}`}
                                       label={t('auto_router.role_provider')}
