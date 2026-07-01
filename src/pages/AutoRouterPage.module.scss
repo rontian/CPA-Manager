@@ -265,9 +265,8 @@
 
 .roleRecommendation {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
   margin: -4px 0 12px;
   padding: 10px 12px;
   border-radius: 8px;
@@ -281,7 +280,39 @@
   color: var(--text-primary);
 }
 
-.roleRecommendation span {
+.presetRecommendation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.presetRecommendation strong {
+  color: var(--text-primary);
+}
+
+.modelRecommendationGroups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modelRecommendationGroup {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+}
+
+.modelRecommendationGroup strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.modelRecommendationGroup span {
   overflow-wrap: anywhere;
 }
 

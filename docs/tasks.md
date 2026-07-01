@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Split built-in role recommendations into capability-first and value-first groups.
 - [x] Rebalance built-in role recommendations toward cost-effective routing.
 - [x] Exclude provider model aliases from Auto Router executable model candidates.
 - [x] Keep Codex model candidate values to executable model IDs only.

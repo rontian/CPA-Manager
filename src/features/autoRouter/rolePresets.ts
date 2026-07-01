@@ -15,6 +15,13 @@ export interface AutoRouterRolePreset {
   matchKeywords: string[];
   promptTemplate: string;
   modelRecommendations: string[];
+  modelRecommendationGroups?: AutoRouterModelRecommendationGroup[];
+}
+
+export interface AutoRouterModelRecommendationGroup {
+  id: 'capability' | 'value';
+  label: string;
+  models: string[];
 }
 
 export interface AutoRouterBrainModelRecommendation {
@@ -99,6 +106,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'glm-5.2',
       'gpt-5.5',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['gpt-5.5', 'qwen3.7-max', 'glm-5.2', 'deepseek-v4-flash', 'gemini-3.5-flash'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['gemini-3.5-flash', 'deepseek-v4-flash', 'qwen3.7-max', 'glm-5.2', 'gpt-5.5'],
+      },
+    ],
   },
   {
     id: 'coding',
@@ -135,6 +154,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'gpt-5.5',
       'claude-opus-4.8',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['claude-opus-4.8', 'gpt-5.5', 'glm-5.2', 'qwen3.7-max', 'deepseek-v4-pro'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['deepseek-v4-pro', 'qwen3.7-max', 'glm-5.2', 'gpt-5.5', 'claude-opus-4.8'],
+      },
+    ],
   },
   {
     id: 'debugging',
@@ -170,6 +201,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'gpt-5.5',
       'claude-opus-4.8',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['claude-opus-4.8', 'gpt-5.5', 'glm-5.2', 'deepseek-v4-pro', 'qwen3.7-max'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['deepseek-v4-pro', 'qwen3.7-max', 'glm-5.2', 'gpt-5.5', 'claude-opus-4.8'],
+      },
+    ],
   },
   {
     id: 'planning',
@@ -203,6 +246,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'gemini-3.5-flash',
       'gpt-5.5',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['gpt-5.5', 'claude-opus-4.8', 'qwen3.7-max', 'glm-5.2', 'deepseek-v4-pro'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['qwen3.7-max', 'glm-5.2', 'deepseek-v4-pro', 'gemini-3.5-flash', 'gpt-5.5'],
+      },
+    ],
   },
   {
     id: 'architecture',
@@ -235,6 +290,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'gpt-5.5',
       'claude-opus-4.8',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['claude-opus-4.8', 'gpt-5.5', 'glm-5.2', 'qwen3.7-max', 'deepseek-v4-pro'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['qwen3.7-max', 'deepseek-v4-pro', 'glm-5.2', 'gpt-5.5', 'claude-opus-4.8'],
+      },
+    ],
   },
   {
     id: 'reviewer',
@@ -265,6 +332,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'gpt-5.5',
       'claude-opus-4.8',
     ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['claude-opus-4.8', 'gpt-5.5', 'glm-5.2', 'qwen3.7-max', 'deepseek-v4-pro'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['glm-5.2', 'qwen3.7-max', 'deepseek-v4-pro', 'gpt-5.5', 'claude-opus-4.8'],
+      },
+    ],
   },
   {
     id: 'docs',
@@ -294,6 +373,18 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
       'deepseek-v4-pro',
       'glm-5.2',
       'gpt-5.5',
+    ],
+    modelRecommendationGroups: [
+      {
+        id: 'capability',
+        label: '能力优先',
+        models: ['gpt-5.5', 'qwen3.7-max', 'glm-5.2', 'deepseek-v4-pro', 'gemini-3.5-flash'],
+      },
+      {
+        id: 'value',
+        label: '性价比优先',
+        models: ['gemini-3.5-flash', 'qwen3.7-max', 'deepseek-v4-pro', 'glm-5.2', 'gpt-5.5'],
+      },
     ],
   },
 ];

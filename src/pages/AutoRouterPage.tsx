@@ -22,6 +22,7 @@ import {
   AUTO_ROUTER_ROLE_PRESETS,
   configPresetToPreset,
   createAutoModelWithRolePresets,
+  type AutoRouterModelRecommendationGroup,
   type AutoRouterRolePreset,
 } from '@/features/autoRouter/rolePresets';
 import type { Config, ModelAlias } from '@/types';
@@ -219,14 +220,34 @@ const roleToCustomPreset = (role: AutoRouterRoleConfig): AutoRouterRolePresetCon
   'prompt-template': role['prompt-template'] ?? '',
 });
 
-const roleModelRecommendations = (
+const roleModelRecommendationGroups = (
   role: AutoRouterRoleConfig,
   presets: AutoRouterRolePreset[]
-): string[] => {
+): AutoRouterModelRecommendationGroup[] => {
   const roleID = role.id.trim();
   if (!roleID) return [];
-  return presets.find((preset) => preset.id === roleID)?.modelRecommendations ?? [];
+  const preset = presets.find((item) => item.id === roleID);
+  if (!preset) return [];
+  if (preset.modelRecommendationGroups?.length) return preset.modelRecommendationGroups;
+  if (preset.modelRecommendations.length) {
+    return [{ id: 'value', label: '推荐', models: preset.modelRecommendations }];
+  }
+  return [];
 };
+
+function ModelRecommendationGroups({ groups }: { groups: AutoRouterModelRecommendationGroup[] }) {
+  if (groups.length === 0) return null;
+  return (
+    <div className={styles.modelRecommendationGroups}>
+      {groups.map((group) => (
+        <div className={styles.modelRecommendationGroup} key={group.id}>
+          <strong>{group.label}</strong>
+          <span>{group.models.join(' / ')}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 interface CandidateInputProps {
   id: string;
@@ -935,7 +956,10 @@ export function AutoRouterPage() {
                         </div>
                         <div className={styles.rolesList}>
                           {model.roles.map((role, roleIndex) => {
-                            const recommendations = roleModelRecommendations(role, rolePresets);
+                            const recommendationGroups = roleModelRecommendationGroups(
+                              role,
+                              rolePresets
+                            );
                             return (
                               <div className={styles.roleCard} key={`${role.id}-${roleIndex}`}>
                                 <div className={styles.cardHeader}>
@@ -977,10 +1001,10 @@ export function AutoRouterPage() {
                                     </Button>
                                   </div>
                                 </div>
-                                {recommendations.length > 0 && (
+                                {recommendationGroups.length > 0 && (
                                   <div className={styles.roleRecommendation}>
                                     <strong>{t('auto_router.model_recommendations')}</strong>
-                                    <span>{recommendations.join(' / ')}</span>
+                                    <ModelRecommendationGroups groups={recommendationGroups} />
                                   </div>
                                 )}
                                 <div className={styles.presetRow}>
@@ -1209,9 +1233,15 @@ export function AutoRouterPage() {
                       </span>
                     </div>
                     <div className={styles.hint}>{preset.strengths.join(' / ')}</div>
-                    <div className={styles.hint}>
-                      {t('auto_router.model_recommendations')}:{' '}
-                      {preset.modelRecommendations.join(' / ')}
+                    <div className={styles.presetRecommendation}>
+                      <strong>{t('auto_router.model_recommendations')}</strong>
+                      <ModelRecommendationGroups
+                        groups={
+                          preset.modelRecommendationGroups ?? [
+                            { id: 'value', label: '推荐', models: preset.modelRecommendations },
+                          ]
+                        }
+                      />
                     </div>
                     <div className={styles.promptPreview}>{preset.promptTemplate}</div>
                   </div>

@@ -59,6 +59,14 @@ describe('auto router role presets', () => {
     for (const preset of AUTO_ROUTER_ROLE_PRESETS) {
       expect(preset.modelRecommendations.length).toBeGreaterThanOrEqual(1);
       expect(preset.modelRecommendations.length).toBeLessThanOrEqual(5);
+      expect(preset.modelRecommendationGroups).toHaveLength(2);
+      expect(preset.modelRecommendationGroups?.map((group) => group.id)).toEqual([
+        'capability',
+        'value',
+      ]);
+      expect(
+        preset.modelRecommendationGroups?.find((group) => group.id === 'value')?.models
+      ).toEqual(preset.modelRecommendations);
     }
   });
 
