@@ -14,6 +14,7 @@
 - [x] Pin Usage Service dev config and SQLite data paths to the repository root.
 - [x] Document root-level dev data path behavior.
 - [x] Keep local Makefile commands independent from AI-only `rtk proxy`.
+- [x] Support Usage Service setup under both `/setup` and `/usage-service/setup`.
 
 ## Auto Router V1
 

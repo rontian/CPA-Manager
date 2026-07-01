@@ -106,6 +106,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/status", s.withCORS(s.handleStatus))
 	mux.HandleFunc("/usage-service/info", s.withCORS(s.handleInfo))
 	mux.HandleFunc("/usage-service/config", s.withCORS(s.handleManagerConfig))
+	mux.HandleFunc("/usage-service/setup", s.withCORS(s.handleSetup))
 	mux.HandleFunc("/setup", s.withCORS(s.handleSetup))
 	mux.HandleFunc("/management.html", s.handlePanel)
 	mux.HandleFunc("/", s.handleRoot)

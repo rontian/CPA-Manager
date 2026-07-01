@@ -504,6 +504,32 @@ func TestSetupAllowsKeyRotationForSameUpstreamWithValidNewKey(t *testing.T) {
 	}
 }
 
+func TestUsageServiceSetupAlias(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v0/management/config" {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{}`))
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	t.Cleanup(upstream.Close)
+
+	handler := newTestHandler(t, "", false)
+	req := httptest.NewRequest(
+		http.MethodPost,
+		"/usage-service/setup",
+		bytes.NewBufferString(`{"cpaBaseUrl":"`+upstream.URL+`","managementKey":"test-key","requestMonitoringEnabled":false}`),
+	)
+	rr := httptest.NewRecorder()
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("setup alias status = %d, body = %s", rr.Code, rr.Body.String())
+	}
+}
+
 func TestSetupRejectsKeyRotationWhenSetupIsEnvironmentManaged(t *testing.T) {
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/v0/management/config" && r.Header.Get("Authorization") == "Bearer rotated-key" {
