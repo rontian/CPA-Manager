@@ -108,7 +108,7 @@ const collectModelNames = (models?: ModelAlias[]) =>
 
 const collectDefinitionModelNames = (
   models: { id: string; display_name?: string; type?: string; owned_by?: string }[]
-) => uniqueStrings(models.flatMap((model) => [model.id, model.display_name ?? '']));
+) => uniqueStrings(models.map((model) => model.id));
 
 type BackendCatalog = {
   providers: string[];

@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Keep Codex model candidate values to executable model IDs only.
 - [x] Include Codex auth model definitions in Auto Router model candidates.
 - [x] Adjust Auto Router brain and role model recommendation display semantics.
 - [x] Add default brain judge prompt and recommended brain models for new Auto models.
