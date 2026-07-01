@@ -390,6 +390,20 @@
   background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
 }
 
+.presetsModal {
+  :global(.modal-body) {
+    max-height: min(72vh, 760px);
+    overflow: auto;
+  }
+}
+
+.presetsModalContent {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
 .presetMeta {
   display: flex;
   gap: 8px;
