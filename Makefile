@@ -43,7 +43,7 @@ dev:
 	exit $$status
 
 dev-web:
-	rtk proxy npm run dev
+	npm run dev
 
 dev-usage:
 	@mkdir -p "$(USAGE_DATA_DIR)"
@@ -52,7 +52,7 @@ dev-usage:
 		USAGE_DATA_DIR="$(USAGE_DATA_DIR)" \
 		USAGE_DB_PATH="$(USAGE_DB_PATH)" \
 		HTTP_ADDR="$(USAGE_HTTP_ADDR)" \
-		rtk proxy go run ./cmd/cpa-manager
+		go run ./cmd/cpa-manager
 
 build:
 	npm run build

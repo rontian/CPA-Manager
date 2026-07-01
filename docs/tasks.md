@@ -17,6 +17,7 @@
 - [x] Make `make dev` reliably start both Vite and Usage Service.
 - [x] Pin Usage Service dev config and SQLite data paths to the repository root.
 - [x] Document root-level dev data path behavior.
+- [x] Keep local Makefile commands independent from AI-only `rtk proxy`.
 
 ## Auto Router V1
 
