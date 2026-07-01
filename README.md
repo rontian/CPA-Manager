@@ -340,24 +340,23 @@ Usage import accepts two file families: JSONL/NDJSON event files exported by Usa
 
 ## Development
 
-Frontend:
+For local development, start the frontend and Usage Service together:
 
 ```bash
 npm ci
-npm run dev
-npm run type-check
-npm run lint
-npm run build
+make dev
 ```
 
-Open `http://localhost:5173`, then connect to your CLI Proxy API backend instance.
+Open `http://localhost:5173`, then connect to your CLI Proxy API backend instance. `make dev` starts both Vite and Usage Service. In dev mode, Usage Service uses the repository root `config.json` and stores SQLite data at the repository root `data/usage.sqlite`.
 
-Usage Service:
+Common split commands:
 
 ```bash
-cd usage-service
-go test ./...
-go run ./cmd/cpa-manager
+make dev-web
+make dev-usage
+make type-check
+make lint
+make build
 ```
 
 ## Build and Release

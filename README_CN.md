@@ -340,24 +340,23 @@ setup 后，`/status`、用量、模型价格和 `/v0/management/*` 反代接口
 
 ## 开发命令
 
-前端：
+本地开发推荐直接同时启动前端和 Usage Service：
 
 ```bash
 npm ci
-npm run dev
-npm run type-check
-npm run lint
-npm run build
+make dev
 ```
 
-打开 `http://localhost:5173`，然后连接到你的 CLI Proxy API 后端实例。
+打开 `http://localhost:5173`，然后连接到你的 CLI Proxy API 后端实例。`make dev` 会同时启动 Vite 和 Usage Service；Usage Service 的开发配置固定为仓库根目录 `config.json`，SQLite 数据固定为仓库根目录 `data/usage.sqlite`。
 
-Usage Service：
+常用拆分命令：
 
 ```bash
-cd usage-service
-go test ./...
-go run ./cmd/cpa-manager
+make dev-web
+make dev-usage
+make type-check
+make lint
+make build
 ```
 
 ## 构建与发布

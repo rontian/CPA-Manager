@@ -1,8 +1,12 @@
+SHELL := /bin/bash
+
 .PHONY: help install dev dev-web dev-usage build test type-check lint format sync-config sync-config-dry tools build-sync-config
 
-# Interpreted from the usage-service directory. The default points to the
-# CPA-Manager repository root so config.json and data/ stay in one place.
-USAGE_CONFIG ?= ../config.json
+ROOT_DIR := $(CURDIR)
+USAGE_CONFIG ?= $(ROOT_DIR)/config.json
+USAGE_DATA_DIR ?= $(ROOT_DIR)/data
+USAGE_DB_PATH ?= $(USAGE_DATA_DIR)/usage.sqlite
+USAGE_HTTP_ADDR ?= 0.0.0.0:18317
 
 help:
 	@echo "CPA-Manager development commands"
@@ -25,18 +29,30 @@ install:
 
 dev:
 	@echo "Starting CPA-Manager web UI and usage-service. Press Ctrl+C to stop both."
-	@npm run dev & \
+	@$(MAKE) --no-print-directory dev-web & \
 	web_pid=$$!; \
-	( cd usage-service && CPA_MANAGER_CONFIG=$(USAGE_CONFIG) go run ./cmd/cpa-manager ) & \
+	$(MAKE) --no-print-directory dev-usage & \
 	usage_pid=$$!; \
 	trap 'kill $$web_pid $$usage_pid 2>/dev/null || true' INT TERM EXIT; \
-	wait $$web_pid $$usage_pid
+	while kill -0 $$web_pid 2>/dev/null && kill -0 $$usage_pid 2>/dev/null; do sleep 1; done; \
+	status=0; \
+	if ! kill -0 $$web_pid 2>/dev/null; then wait $$web_pid || status=$$?; fi; \
+	if ! kill -0 $$usage_pid 2>/dev/null; then wait $$usage_pid || status=$$?; fi; \
+	kill $$web_pid $$usage_pid 2>/dev/null || true; \
+	wait $$web_pid $$usage_pid 2>/dev/null || true; \
+	exit $$status
 
 dev-web:
-	npm run dev
+	rtk proxy npm run dev
 
 dev-usage:
-	cd usage-service && CPA_MANAGER_CONFIG=$(USAGE_CONFIG) go run ./cmd/cpa-manager
+	@mkdir -p "$(USAGE_DATA_DIR)"
+	cd usage-service && \
+		CPA_MANAGER_CONFIG="$(USAGE_CONFIG)" \
+		USAGE_DATA_DIR="$(USAGE_DATA_DIR)" \
+		USAGE_DB_PATH="$(USAGE_DB_PATH)" \
+		HTTP_ADDR="$(USAGE_HTTP_ADDR)" \
+		rtk proxy go run ./cmd/cpa-manager
 
 build:
 	npm run build

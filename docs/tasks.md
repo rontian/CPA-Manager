@@ -12,6 +12,12 @@
 
 - [x] Hide manual callback input by default for local OAuth login flows.
 
+## Usage Service Dev Workflow
+
+- [x] Make `make dev` reliably start both Vite and Usage Service.
+- [x] Pin Usage Service dev config and SQLite data paths to the repository root.
+- [x] Document root-level dev data path behavior.
+
 ## Auto Router V1
 
 - [x] Add role-level tabs inside Auto Router role configuration.
