@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Rebalance built-in role recommendations toward cost-effective routing.
 - [x] Exclude provider model aliases from Auto Router executable model candidates.
 - [x] Keep Codex model candidate values to executable model IDs only.
 - [x] Include Codex auth model definitions in Auto Router model candidates.

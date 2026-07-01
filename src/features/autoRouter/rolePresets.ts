@@ -95,8 +95,8 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     modelRecommendations: [
       'gemini-3.5-flash',
       'deepseek-v4-flash',
-      'glm-5.2',
       'qwen3.7-max',
+      'glm-5.2',
       'gpt-5.5',
     ],
   },
@@ -129,11 +129,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个代码工程师角色。优先关注实现正确性、可维护性和可验证性。\n当用户提出代码实现、重构、仓库分析、测试补齐或开发任务拆解时，先确认目标和约束，再给出具体实现方案。\n如果需要修改代码，应尽量保持变更范围小，并说明需要验证的命令或测试点。\n不要声称已经运行命令或修改文件，除非当前环境确实提供了对应能力。',
     modelRecommendations: [
-      'claude-opus-4.8',
-      'gpt-5.5',
-      'glm-5.2',
-      'qwen3.7-max',
       'deepseek-v4-pro',
+      'qwen3.7-max',
+      'glm-5.2',
+      'gpt-5.5',
+      'claude-opus-4.8',
     ],
   },
   {
@@ -164,11 +164,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个调试诊断角色。优先从错误信息、日志、堆栈、复现步骤和最近变更中定位根因。\n回答时先给出最可能原因，再给出验证方法和最小修复路径。\n如果证据不足，请明确列出需要补充的日志、命令输出、配置或相关代码位置。\n不要跳过验证思路，也不要把猜测包装成确定结论。',
     modelRecommendations: [
-      'claude-opus-4.8',
-      'gpt-5.5',
-      'glm-5.2',
       'deepseek-v4-pro',
       'qwen3.7-max',
+      'glm-5.2',
+      'gpt-5.5',
+      'claude-opus-4.8',
     ],
   },
   {
@@ -197,11 +197,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个规划分析角色。优先澄清目标、用户价值、约束、风险和可落地路径。\n回答时把需求拆成阶段、任务、优先级和验收标准，并指出哪些问题需要先确认。\n如果用户已经给出明确目标，应直接形成可执行计划，避免空泛讨论。',
     modelRecommendations: [
-      'gpt-5.5',
-      'claude-opus-4.8',
       'qwen3.7-max',
       'glm-5.2',
       'deepseek-v4-pro',
+      'gemini-3.5-flash',
+      'gpt-5.5',
     ],
   },
   {
@@ -229,11 +229,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个架构方案角色。优先关注边界清晰、复杂度可控、可迁移、可观测和后续演进空间。\n回答时说明推荐方案、关键取舍、风险点和分阶段落地路径。\n如果需求可以用更简单的实现满足，应明确指出，并避免过度设计。',
     modelRecommendations: [
-      'gpt-5.5',
-      'claude-opus-4.8',
-      'glm-5.2',
       'qwen3.7-max',
       'deepseek-v4-pro',
+      'glm-5.2',
+      'gpt-5.5',
+      'claude-opus-4.8',
     ],
   },
   {
@@ -259,11 +259,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个代码审查角色。优先寻找真实的缺陷、回归风险、安全隐患、边界条件和测试缺口。\n回答时先列问题，按严重程度排序，并尽量给出具体文件、位置、触发条件和修复建议。\n如果没有发现明确问题，应直接说明，同时指出剩余不确定性或仍需验证的测试范围。',
     modelRecommendations: [
-      'claude-opus-4.8',
-      'gpt-5.5',
       'glm-5.2',
       'qwen3.7-max',
       'deepseek-v4-pro',
+      'gpt-5.5',
+      'claude-opus-4.8',
     ],
   },
   {
@@ -289,11 +289,11 @@ export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
     promptTemplate:
       '你是一个技术文档角色。优先把复杂配置、开发流程和操作步骤写得准确、可执行、易扫描。\n回答时保持结构清晰，区分背景、步骤、注意事项和验证方式。\n不要加入无法从上下文确认的承诺；如果某些命令或路径需要用户确认，请明确标出。',
     modelRecommendations: [
-      'gpt-5.5',
-      'claude-opus-4.8',
       'gemini-3.5-flash',
       'qwen3.7-max',
       'deepseek-v4-pro',
+      'glm-5.2',
+      'gpt-5.5',
     ],
   },
 ];
