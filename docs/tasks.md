@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Add role-level tabs inside Auto Router role configuration.
 - [x] Adjust Auto Router role form layout for role description and model target fields.
 - [x] Add Auto Model Selection policy and role candidate pool controls.
 - [x] Move Auto Router role preset management into an on-demand modal.

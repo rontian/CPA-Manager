@@ -347,6 +347,7 @@ export function AutoRouterPage() {
   const [dryRunDecision, setDryRunDecision] = useState<AutoRouterDecision | null>(null);
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [activeModelTabs, setActiveModelTabs] = useState<Record<number, ModelTab>>({});
+  const [activeRoleTabs, setActiveRoleTabs] = useState<Record<number, number>>({});
   const [activePresetTab, setActivePresetTab] = useState<PresetTab>('builtin');
   const [presetModalOpen, setPresetModalOpen] = useState(false);
   const [modelDefinitions, setModelDefinitions] = useState<ModelDefinitionsByProvider>({});
@@ -511,6 +512,10 @@ export function AutoRouterPage() {
         roles: [...model.roles, createAutoRole()],
       }))
     );
+    setActiveRoleTabs((current) => ({
+      ...current,
+      [modelIndex]: config.models[modelIndex]?.roles.length ?? 0,
+    }));
   };
 
   const removeRole = (modelIndex: number, roleIndex: number) => {
@@ -520,6 +525,10 @@ export function AutoRouterPage() {
         roles: model.roles.filter((_, index) => index !== roleIndex),
       }))
     );
+    setActiveRoleTabs((current) => ({
+      ...current,
+      [modelIndex]: Math.max(0, Math.min(current[modelIndex] ?? 0, roleIndex - 1)),
+    }));
   };
 
   const applyRolePreset = (modelIndex: number, roleIndex: number, presetId: string) => {
@@ -658,6 +667,10 @@ export function AutoRouterPage() {
                 )}
                 {config.models.map((model, modelIndex) => {
                   const activeTab = activeModelTabs[modelIndex] ?? 'basic';
+                  const activeRoleIndex = Math.min(
+                    activeRoleTabs[modelIndex] ?? 0,
+                    Math.max(model.roles.length - 1, 0)
+                  );
 
                   return (
                     <div className={styles.modelCard} key={`${model.name}-${modelIndex}`}>
@@ -1045,8 +1058,35 @@ export function AutoRouterPage() {
                               {t('auto_router.add_role')}
                             </Button>
                           </div>
+                          {model.roles.length > 0 && (
+                            <div className={styles.roleTabs} role="tablist">
+                              {model.roles.map((role, roleIndex) => (
+                                <button
+                                  key={`${role.id}-${roleIndex}`}
+                                  type="button"
+                                  role="tab"
+                                  aria-selected={activeRoleIndex === roleIndex}
+                                  className={`${styles.roleTab} ${
+                                    activeRoleIndex === roleIndex ? styles.roleTabActive : ''
+                                  }`}
+                                  onClick={() =>
+                                    setActiveRoleTabs((current) => ({
+                                      ...current,
+                                      [modelIndex]: roleIndex,
+                                    }))
+                                  }
+                                >
+                                  <span>
+                                    {role.name || role.id || t('auto_router.unnamed_role')}
+                                  </span>
+                                  <small>{role.id || `#${roleIndex + 1}`}</small>
+                                </button>
+                              ))}
+                            </div>
+                          )}
                           <div className={styles.rolesList}>
                             {model.roles.map((role, roleIndex) => {
+                              if (roleIndex !== activeRoleIndex) return null;
                               const recommendationGroups = roleModelRecommendationGroups(
                                 role,
                                 rolePresets
