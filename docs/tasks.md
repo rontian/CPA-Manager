@@ -16,6 +16,7 @@
 - [x] Keep local Makefile commands independent from AI-only `rtk proxy`.
 - [x] Support Usage Service setup under both `/setup` and `/usage-service/setup`.
 - [x] Route frontend Usage Service setup calls through `/usage-service/setup`.
+- [x] Proxy CPA Management API requests through Usage Service in Vite dev mode.
 
 ## Auto Router V1
 

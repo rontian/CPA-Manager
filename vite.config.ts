@@ -52,8 +52,13 @@ export default defineConfig({
     }
   },
   server: {
+    // Development only. Production routing is handled by the Usage Service or CPA host.
     proxy: {
       '/usage-service': {
+        target: 'http://localhost:18317',
+        changeOrigin: true
+      },
+      '/v0/management': {
         target: 'http://localhost:18317',
         changeOrigin: true
       }
