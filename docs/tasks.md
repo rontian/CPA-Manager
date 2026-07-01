@@ -8,6 +8,10 @@
 - [x] Use typed Chinese commit messages for future local-extension work.
 - [x] Add Python-free config sync binaries for production hosts.
 
+## OAuth Login UX
+
+- [x] Hide manual callback input by default for local OAuth login flows.
+
 ## Auto Router V1
 
 - [x] Add role-level tabs inside Auto Router role configuration.
