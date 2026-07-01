@@ -247,61 +247,42 @@
 }
 
 .recommendationChips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 10px;
-}
-
-.recommendationChip {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
-  min-height: 58px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recommendationText {
   padding: 10px 12px;
-  border: 1px solid color-mix(in srgb, var(--border-color) 82%, transparent);
-  border-radius: 8px;
-  background: var(--bg-primary);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg-primary) 86%, transparent);
   color: var(--text-primary);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-.recommendationChip:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--primary-color) 34%, var(--border-color));
-  background: color-mix(in srgb, var(--primary-color) 8%, var(--bg-primary));
-}
-
-.recommendationChip:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-.recommendationChip span {
   font-size: 13px;
-  font-weight: 800;
-}
-
-.recommendationChip small {
-  max-width: 100%;
-  color: var(--text-secondary);
-  font-size: 11px;
-  line-height: 1.3;
+  font-weight: 700;
+  line-height: 1.45;
   overflow-wrap: anywhere;
 }
 
-.recommendationChipActive {
-  border-color: color-mix(in srgb, var(--primary-color) 58%, var(--border-color));
-  background: color-mix(in srgb, var(--primary-color) 13%, var(--bg-primary));
-  color: var(--primary-active);
-  box-shadow: inset 3px 0 0 var(--primary-color);
+.roleRecommendation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary-color) 5%, var(--bg-primary));
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.roleRecommendation strong {
+  color: var(--text-primary);
+}
+
+.roleRecommendation span {
+  overflow-wrap: anywhere;
 }
 
 .textarea,

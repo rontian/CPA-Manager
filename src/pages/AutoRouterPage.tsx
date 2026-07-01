@@ -213,6 +213,15 @@ const roleToCustomPreset = (role: AutoRouterRoleConfig): AutoRouterRolePresetCon
   'prompt-template': role['prompt-template'] ?? '',
 });
 
+const roleModelRecommendations = (
+  role: AutoRouterRoleConfig,
+  presets: AutoRouterRolePreset[]
+): string[] => {
+  const roleID = role.id.trim();
+  if (!roleID) return [];
+  return presets.find((preset) => preset.id === roleID)?.modelRecommendations ?? [];
+};
+
 interface CandidateInputProps {
   id: string;
   label: string;
@@ -646,40 +655,10 @@ export function AutoRouterPage() {
                             <strong>{t('auto_router.brain_model_recommendations')}</strong>
                             <p>{t('auto_router.brain_model_recommendations_hint')}</p>
                           </div>
-                          <div className={styles.recommendationChips}>
-                            {AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS.map((recommendation) => {
-                              const selected =
-                                model.brain.provider === recommendation.provider &&
-                                model.brain.model === recommendation.model;
-                              return (
-                                <button
-                                  key={`${recommendation.provider}/${recommendation.model}`}
-                                  type="button"
-                                  className={`${styles.recommendationChip} ${
-                                    selected ? styles.recommendationChipActive : ''
-                                  }`}
-                                  disabled={disabled}
-                                  title={`${recommendation.provider}/${recommendation.model} - ${recommendation.description}`}
-                                  onClick={() =>
-                                    patchConfig((current) =>
-                                      updateModel(current, modelIndex, (item) => ({
-                                        ...item,
-                                        brain: {
-                                          ...item.brain,
-                                          provider: recommendation.provider,
-                                          model: recommendation.model,
-                                        },
-                                      }))
-                                    )
-                                  }
-                                >
-                                  <span>{recommendation.label}</span>
-                                  <small>
-                                    {recommendation.provider}/{recommendation.model}
-                                  </small>
-                                </button>
-                              );
-                            })}
+                          <div className={styles.recommendationText}>
+                            {AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS.map(
+                              (recommendation) => recommendation.model
+                            ).join(' / ')}
                           </div>
                         </div>
                         <div className={styles.formGrid}>
@@ -917,216 +896,225 @@ export function AutoRouterPage() {
                           </Button>
                         </div>
                         <div className={styles.rolesList}>
-                          {model.roles.map((role, roleIndex) => (
-                            <div className={styles.roleCard} key={`${role.id}-${roleIndex}`}>
-                              <div className={styles.cardHeader}>
-                                <div className={styles.roleTitle}>
-                                  <h3>{role.name || role.id || t('auto_router.unnamed_role')}</h3>
-                                  <span className={styles.roleId}>{role.id}</span>
+                          {model.roles.map((role, roleIndex) => {
+                            const recommendations = roleModelRecommendations(role, rolePresets);
+                            return (
+                              <div className={styles.roleCard} key={`${role.id}-${roleIndex}`}>
+                                <div className={styles.cardHeader}>
+                                  <div className={styles.roleTitle}>
+                                    <h3>{role.name || role.id || t('auto_router.unnamed_role')}</h3>
+                                    <span className={styles.roleId}>{role.id}</span>
+                                  </div>
+                                  <div className={styles.rowActions}>
+                                    <ToggleSwitch
+                                      checked={!role.disabled}
+                                      onChange={(enabled) =>
+                                        patchConfig((current) =>
+                                          updateRole(current, modelIndex, roleIndex, (item) => ({
+                                            ...item,
+                                            disabled: !enabled,
+                                          }))
+                                        )
+                                      }
+                                      disabled={disabled}
+                                      label={
+                                        !role.disabled ? t('common.enabled') : t('common.disabled')
+                                      }
+                                    />
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() => saveRoleAsCustomPreset(role)}
+                                      disabled={disabled}
+                                    >
+                                      {t('auto_router.save_role_as_preset')}
+                                    </Button>
+                                    <Button
+                                      variant="danger"
+                                      size="sm"
+                                      onClick={() => removeRole(modelIndex, roleIndex)}
+                                      disabled={disabled}
+                                    >
+                                      {t('common.delete')}
+                                    </Button>
+                                  </div>
                                 </div>
-                                <div className={styles.rowActions}>
-                                  <ToggleSwitch
-                                    checked={!role.disabled}
-                                    onChange={(enabled) =>
+                                {recommendations.length > 0 && (
+                                  <div className={styles.roleRecommendation}>
+                                    <strong>{t('auto_router.model_recommendations')}</strong>
+                                    <span>{recommendations.join(' / ')}</span>
+                                  </div>
+                                )}
+                                <div className={styles.presetRow}>
+                                  <div className={styles.presetSelectGroup}>
+                                    <label>{t('auto_router.role_preset')}</label>
+                                    <Select
+                                      value=""
+                                      options={rolePresetOptions}
+                                      placeholder={t('auto_router.role_preset_placeholder')}
+                                      onChange={(presetId) =>
+                                        applyRolePreset(modelIndex, roleIndex, presetId)
+                                      }
+                                      disabled={disabled}
+                                    />
+                                  </div>
+                                  <div className={styles.presetHint}>
+                                    {t('auto_router.role_preset_hint')}
+                                  </div>
+                                </div>
+                                <div className={styles.formGrid}>
+                                  <Input
+                                    label={t('auto_router.role_id')}
+                                    value={role.id}
+                                    disabled={disabled}
+                                    onChange={(event) =>
                                       patchConfig((current) =>
                                         updateRole(current, modelIndex, roleIndex, (item) => ({
                                           ...item,
-                                          disabled: !enabled,
+                                          id: event.target.value,
                                         }))
                                       )
                                     }
+                                  />
+                                  <Input
+                                    label={t('auto_router.role_name')}
+                                    value={role.name ?? ''}
                                     disabled={disabled}
-                                    label={
-                                      !role.disabled ? t('common.enabled') : t('common.disabled')
+                                    onChange={(event) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          name: event.target.value,
+                                        }))
+                                      )
                                     }
                                   />
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() => saveRoleAsCustomPreset(role)}
+                                  <Input
+                                    label={t('auto_router.role_description')}
+                                    value={role.description ?? ''}
                                     disabled={disabled}
-                                  >
-                                    {t('auto_router.save_role_as_preset')}
-                                  </Button>
-                                  <Button
-                                    variant="danger"
-                                    size="sm"
-                                    onClick={() => removeRole(modelIndex, roleIndex)}
-                                    disabled={disabled}
-                                  >
-                                    {t('common.delete')}
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className={styles.presetRow}>
-                                <div className={styles.presetSelectGroup}>
-                                  <label>{t('auto_router.role_preset')}</label>
-                                  <Select
-                                    value=""
-                                    options={rolePresetOptions}
-                                    placeholder={t('auto_router.role_preset_placeholder')}
-                                    onChange={(presetId) =>
-                                      applyRolePreset(modelIndex, roleIndex, presetId)
+                                    className={styles.fullWidth}
+                                    onChange={(event) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          description: event.target.value,
+                                        }))
+                                      )
                                     }
-                                    disabled={disabled}
                                   />
-                                </div>
-                                <div className={styles.presetHint}>
-                                  {t('auto_router.role_preset_hint')}
-                                </div>
-                              </div>
-                              <div className={styles.formGrid}>
-                                <Input
-                                  label={t('auto_router.role_id')}
-                                  value={role.id}
-                                  disabled={disabled}
-                                  onChange={(event) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        id: event.target.value,
-                                      }))
-                                    )
-                                  }
-                                />
-                                <Input
-                                  label={t('auto_router.role_name')}
-                                  value={role.name ?? ''}
-                                  disabled={disabled}
-                                  onChange={(event) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        name: event.target.value,
-                                      }))
-                                    )
-                                  }
-                                />
-                                <Input
-                                  label={t('auto_router.role_description')}
-                                  value={role.description ?? ''}
-                                  disabled={disabled}
-                                  className={styles.fullWidth}
-                                  onChange={(event) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        description: event.target.value,
-                                      }))
-                                    )
-                                  }
-                                />
-                                <CandidateInput
-                                  id={`auto-router-role-provider-${modelIndex}-${roleIndex}`}
-                                  label={t('auto_router.role_provider')}
-                                  value={role.provider}
-                                  options={backendCatalog.providers}
-                                  disabled={disabled}
-                                  onChange={(value) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        provider: value,
-                                      }))
-                                    )
-                                  }
-                                />
-                                <CandidateInput
-                                  id={`auto-router-role-model-${modelIndex}-${roleIndex}`}
-                                  label={t('auto_router.role_model')}
-                                  value={role.model}
-                                  options={getModelOptions(role.provider)}
-                                  disabled={disabled}
-                                  onChange={(value) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        model: value,
-                                      }))
-                                    )
-                                  }
-                                />
-                                <div className={styles.presetSelectGroup}>
-                                  <label>{t('auto_router.cost_tier')}</label>
-                                  <Select
-                                    value={role['cost-tier'] ?? 'medium'}
-                                    options={costTierOptions}
+                                  <CandidateInput
+                                    id={`auto-router-role-provider-${modelIndex}-${roleIndex}`}
+                                    label={t('auto_router.role_provider')}
+                                    value={role.provider}
+                                    options={backendCatalog.providers}
                                     disabled={disabled}
                                     onChange={(value) =>
                                       patchConfig((current) =>
                                         updateRole(current, modelIndex, roleIndex, (item) => ({
                                           ...item,
-                                          'cost-tier': value,
+                                          provider: value,
                                         }))
                                       )
                                     }
                                   />
-                                </div>
-                                <Input
-                                  label={t('auto_router.priority')}
-                                  type="number"
-                                  value={String(role.priority ?? 0)}
-                                  disabled={disabled}
-                                  onChange={(event) =>
-                                    patchConfig((current) =>
-                                      updateRole(current, modelIndex, roleIndex, (item) => ({
-                                        ...item,
-                                        priority: Number(event.target.value),
-                                      }))
-                                    )
-                                  }
-                                />
-                                <div className={styles.textareaGroup}>
-                                  <label>{t('auto_router.match_keywords')}</label>
-                                  <textarea
-                                    className={styles.textarea}
-                                    value={listToText(role['match-keywords'])}
+                                  <CandidateInput
+                                    id={`auto-router-role-model-${modelIndex}-${roleIndex}`}
+                                    label={t('auto_router.role_model')}
+                                    value={role.model}
+                                    options={getModelOptions(role.provider)}
+                                    disabled={disabled}
+                                    onChange={(value) =>
+                                      patchConfig((current) =>
+                                        updateRole(current, modelIndex, roleIndex, (item) => ({
+                                          ...item,
+                                          model: value,
+                                        }))
+                                      )
+                                    }
+                                  />
+                                  <div className={styles.presetSelectGroup}>
+                                    <label>{t('auto_router.cost_tier')}</label>
+                                    <Select
+                                      value={role['cost-tier'] ?? 'medium'}
+                                      options={costTierOptions}
+                                      disabled={disabled}
+                                      onChange={(value) =>
+                                        patchConfig((current) =>
+                                          updateRole(current, modelIndex, roleIndex, (item) => ({
+                                            ...item,
+                                            'cost-tier': value,
+                                          }))
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <Input
+                                    label={t('auto_router.priority')}
+                                    type="number"
+                                    value={String(role.priority ?? 0)}
                                     disabled={disabled}
                                     onChange={(event) =>
                                       patchConfig((current) =>
                                         updateRole(current, modelIndex, roleIndex, (item) => ({
                                           ...item,
-                                          'match-keywords': textToList(event.target.value),
+                                          priority: Number(event.target.value),
                                         }))
                                       )
                                     }
                                   />
-                                </div>
-                                <div className={styles.textareaGroup}>
-                                  <label>{t('auto_router.strengths')}</label>
-                                  <textarea
-                                    className={styles.textarea}
-                                    value={listToText(role.strengths)}
-                                    disabled={disabled}
-                                    onChange={(event) =>
-                                      patchConfig((current) =>
-                                        updateRole(current, modelIndex, roleIndex, (item) => ({
-                                          ...item,
-                                          strengths: textToList(event.target.value),
-                                        }))
-                                      )
-                                    }
-                                  />
-                                </div>
-                                <div className={`${styles.textareaGroup} ${styles.fullWidth}`}>
-                                  <label>{t('auto_router.role_prompt')}</label>
-                                  <textarea
-                                    className={styles.textarea}
-                                    value={role['prompt-template'] ?? ''}
-                                    disabled={disabled}
-                                    onChange={(event) =>
-                                      patchConfig((current) =>
-                                        updateRole(current, modelIndex, roleIndex, (item) => ({
-                                          ...item,
-                                          'prompt-template': event.target.value,
-                                        }))
-                                      )
-                                    }
-                                  />
+                                  <div className={styles.textareaGroup}>
+                                    <label>{t('auto_router.match_keywords')}</label>
+                                    <textarea
+                                      className={styles.textarea}
+                                      value={listToText(role['match-keywords'])}
+                                      disabled={disabled}
+                                      onChange={(event) =>
+                                        patchConfig((current) =>
+                                          updateRole(current, modelIndex, roleIndex, (item) => ({
+                                            ...item,
+                                            'match-keywords': textToList(event.target.value),
+                                          }))
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <div className={styles.textareaGroup}>
+                                    <label>{t('auto_router.strengths')}</label>
+                                    <textarea
+                                      className={styles.textarea}
+                                      value={listToText(role.strengths)}
+                                      disabled={disabled}
+                                      onChange={(event) =>
+                                        patchConfig((current) =>
+                                          updateRole(current, modelIndex, roleIndex, (item) => ({
+                                            ...item,
+                                            strengths: textToList(event.target.value),
+                                          }))
+                                        )
+                                      }
+                                    />
+                                  </div>
+                                  <div className={`${styles.textareaGroup} ${styles.fullWidth}`}>
+                                    <label>{t('auto_router.role_prompt')}</label>
+                                    <textarea
+                                      className={styles.textarea}
+                                      value={role['prompt-template'] ?? ''}
+                                      disabled={disabled}
+                                      onChange={(event) =>
+                                        patchConfig((current) =>
+                                          updateRole(current, modelIndex, roleIndex, (item) => ({
+                                            ...item,
+                                            'prompt-template': event.target.value,
+                                          }))
+                                        )
+                                      }
+                                    />
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     )}

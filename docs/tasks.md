@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Adjust Auto Router brain and role model recommendation display semantics.
 - [x] Add default brain judge prompt and recommended brain models for new Auto models.
 - [x] Add Auto Router management page.
 - [x] Add multi-tab Auto model configuration UI.
