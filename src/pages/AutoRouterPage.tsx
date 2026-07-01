@@ -16,6 +16,8 @@ import {
 } from '@/services/api/autoRouter';
 import {
   applyPresetToRole,
+  AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS,
+  AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE,
   AUTO_ROUTER_ROLE_PRESETS,
   configPresetToPreset,
   createAutoModelWithRolePresets,
@@ -639,6 +641,47 @@ export function AutoRouterPage() {
                     {activeTab === 'brain' && (
                       <div className={styles.section}>
                         <h3>{t('auto_router.brain_title')}</h3>
+                        <div className={styles.recommendationPanel}>
+                          <div>
+                            <strong>{t('auto_router.brain_model_recommendations')}</strong>
+                            <p>{t('auto_router.brain_model_recommendations_hint')}</p>
+                          </div>
+                          <div className={styles.recommendationChips}>
+                            {AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS.map((recommendation) => {
+                              const selected =
+                                model.brain.provider === recommendation.provider &&
+                                model.brain.model === recommendation.model;
+                              return (
+                                <button
+                                  key={`${recommendation.provider}/${recommendation.model}`}
+                                  type="button"
+                                  className={`${styles.recommendationChip} ${
+                                    selected ? styles.recommendationChipActive : ''
+                                  }`}
+                                  disabled={disabled}
+                                  title={`${recommendation.provider}/${recommendation.model} - ${recommendation.description}`}
+                                  onClick={() =>
+                                    patchConfig((current) =>
+                                      updateModel(current, modelIndex, (item) => ({
+                                        ...item,
+                                        brain: {
+                                          ...item.brain,
+                                          provider: recommendation.provider,
+                                          model: recommendation.model,
+                                        },
+                                      }))
+                                    )
+                                  }
+                                >
+                                  <span>{recommendation.label}</span>
+                                  <small>
+                                    {recommendation.provider}/{recommendation.model}
+                                  </small>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
                         <div className={styles.formGrid}>
                           <CandidateInput
                             id={`auto-router-brain-provider-${modelIndex}`}
@@ -704,7 +747,28 @@ export function AutoRouterPage() {
                           />
                         </div>
                         <div className={styles.textareaGroup}>
-                          <label>{t('auto_router.brain_prompt')}</label>
+                          <div className={styles.labelRow}>
+                            <label>{t('auto_router.brain_prompt')}</label>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              disabled={disabled}
+                              onClick={() =>
+                                patchConfig((current) =>
+                                  updateModel(current, modelIndex, (item) => ({
+                                    ...item,
+                                    brain: {
+                                      ...item.brain,
+                                      'prompt-template': AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE,
+                                    },
+                                  }))
+                                )
+                              }
+                            >
+                              {t('auto_router.fill_default_brain_prompt')}
+                            </Button>
+                          </div>
+                          <div className={styles.hint}>{t('auto_router.brain_prompt_hint')}</div>
                           <textarea
                             className={styles.textarea}
                             value={model.brain['prompt-template'] ?? ''}

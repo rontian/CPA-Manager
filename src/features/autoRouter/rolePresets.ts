@@ -17,6 +17,58 @@ export interface AutoRouterRolePreset {
   modelRecommendations: string[];
 }
 
+export interface AutoRouterBrainModelRecommendation {
+  provider: string;
+  model: string;
+  label: string;
+  description: string;
+}
+
+export const AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE = `你是 Auto Router 的主脑裁判，只负责根据用户最新输入、完整对话历史和已配置角色，选择最合适的角色来处理下一步请求。
+
+决策规则：
+1. 只能选择配置中存在的 role_id；当没有合适角色或需要兜底时，选择 "fallback"。
+2. 结合前文语境判断用户当前意图，不要只看最后一句话。
+3. 如果用户明确提出新任务、切换话题、重新判断或要求换方向，应允许切换角色。
+4. 优先选择最能完成任务且成本合理的角色；不要为了小问题选择高成本角色。
+5. 你不执行用户任务，只做路由判断。
+
+只返回 JSON，不要返回 Markdown、解释或额外文本。JSON 格式：
+{"role_id":"coding","confidence":0.91,"reason":"用户正在请求代码实现或调试。"}`;
+
+export const AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS: AutoRouterBrainModelRecommendation[] = [
+  {
+    provider: 'gemini',
+    model: 'gemini-2.5-flash',
+    label: 'Gemini Flash',
+    description: '低成本、低延迟，适合作为主脑路由裁判。',
+  },
+  {
+    provider: 'openai-compatible-deepseek',
+    model: 'deepseek-v4-flash',
+    label: 'DeepSeek Flash',
+    description: '适合中文开发场景，成本较低。',
+  },
+  {
+    provider: 'openai-compatible-qwen',
+    model: 'qwen3.7-max',
+    label: 'Qwen Max',
+    description: '通用理解能力较强，适合复杂意图判断。',
+  },
+  {
+    provider: 'openai-compatible-zhipu',
+    model: 'glm-5.2',
+    label: 'GLM',
+    description: '中文语义理解稳定，适合日常路由判断。',
+  },
+  {
+    provider: 'codex',
+    model: 'gpt-5.5',
+    label: 'GPT',
+    description: '能力更强但成本更高，适合复杂任务路由。',
+  },
+];
+
 export const AUTO_ROUTER_ROLE_PRESETS: AutoRouterRolePreset[] = [
   {
     id: 'fast',
@@ -313,8 +365,9 @@ export const createAutoModelWithRolePresets = (): AutoModelConfig => ({
     model: '',
   },
   brain: {
-    provider: '',
-    model: '',
+    provider: AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS[0].provider,
+    model: AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS[0].model,
+    'prompt-template': AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE,
     temperature: 0,
     'max-tokens': 512,
   },

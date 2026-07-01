@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   applyPresetToRole,
+  AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS,
+  AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE,
   AUTO_ROUTER_ROLE_PRESETS,
   configPresetToPreset,
   createAutoModelWithRolePresets,
@@ -34,6 +36,22 @@ describe('auto router role presets', () => {
     });
     expect(role).not.toHaveProperty('presetId');
     expect(role).not.toHaveProperty('preset-id');
+  });
+
+  it('creates auto models with default brain judge settings', () => {
+    const model = createAutoModelWithRolePresets();
+    const recommendation = AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS[0];
+
+    expect(model.brain).toMatchObject({
+      provider: recommendation.provider,
+      model: recommendation.model,
+      temperature: 0,
+      'max-tokens': 512,
+      'prompt-template': AUTO_ROUTER_BRAIN_PROMPT_TEMPLATE,
+    });
+    expect(model.brain['prompt-template']).toContain('role_id');
+    expect(model.brain['prompt-template']).toContain('confidence');
+    expect(model.brain['prompt-template']).toContain('reason');
   });
 
   it('includes planning and model recommendations for every built-in preset', () => {
