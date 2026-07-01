@@ -14,6 +14,7 @@ import {
   type AutoRouterRolePresetConfig,
   type AutoRouterSessionSnapshot,
 } from '@/services/api/autoRouter';
+import { authFilesApi } from '@/services/api/authFiles';
 import {
   applyPresetToRole,
   AUTO_ROUTER_BRAIN_MODEL_RECOMMENDATIONS,
@@ -105,11 +106,17 @@ const collectModelNames = (models?: ModelAlias[]) =>
     ])
   );
 
+const collectDefinitionModelNames = (
+  models: { id: string; display_name?: string; type?: string; owned_by?: string }[]
+) => uniqueStrings(models.flatMap((model) => [model.id, model.display_name ?? '']));
+
 type BackendCatalog = {
   providers: string[];
   modelsByProvider: Record<string, string[]>;
   allModels: string[];
 };
+
+type ModelDefinitionsByProvider = Record<string, string[]>;
 
 const addProviderModels = (catalog: BackendCatalog, provider: string, models: string[] = []) => {
   const normalizedProvider = provider.trim();
@@ -122,7 +129,11 @@ const addProviderModels = (catalog: BackendCatalog, provider: string, models: st
   catalog.allModels = uniqueStrings([...catalog.allModels, ...models]);
 };
 
-const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRouterConfig) => {
+const buildBackendCatalog = (
+  managerConfig: Config | null,
+  autoConfig: AutoRouterConfig,
+  modelDefinitions: ModelDefinitionsByProvider
+) => {
   const catalog: BackendCatalog = {
     providers: [],
     modelsByProvider: {},
@@ -134,11 +145,10 @@ const buildBackendCatalog = (managerConfig: Config | null, autoConfig: AutoRoute
     'gemini',
     (managerConfig?.geminiApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
   );
-  addProviderModels(
-    catalog,
-    'codex',
-    (managerConfig?.codexApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
-  );
+  addProviderModels(catalog, 'codex', [
+    ...(managerConfig?.codexApiKeys ?? []).flatMap((item) => collectModelNames(item.models)),
+    ...(modelDefinitions.codex ?? []),
+  ]);
   addProviderModels(
     catalog,
     'claude',
@@ -272,6 +282,7 @@ export function AutoRouterPage() {
   const [dryRunLoading, setDryRunLoading] = useState(false);
   const [activeModelTabs, setActiveModelTabs] = useState<Record<number, ModelTab>>({});
   const [activePresetTab, setActivePresetTab] = useState<PresetTab>('builtin');
+  const [modelDefinitions, setModelDefinitions] = useState<ModelDefinitionsByProvider>({});
 
   const disabled = connectionStatus !== 'connected';
   const activeModels = useMemo(() => config.models.filter((model) => model.name.trim()), [config]);
@@ -300,8 +311,8 @@ export function AutoRouterPage() {
     [rolePresets, t]
   );
   const backendCatalog = useMemo(
-    () => buildBackendCatalog(managerConfig, config),
-    [managerConfig, config]
+    () => buildBackendCatalog(managerConfig, config, modelDefinitions),
+    [managerConfig, config, modelDefinitions]
   );
   const getModelOptions = useCallback(
     (provider: string) => {
@@ -341,6 +352,37 @@ export function AutoRouterPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (disabled) {
+      setModelDefinitions({});
+      return;
+    }
+
+    let cancelled = false;
+    authFilesApi
+      .getModelDefinitions('codex')
+      .then((models) => {
+        if (cancelled) return;
+        setModelDefinitions((current) => ({
+          ...current,
+          codex: collectDefinitionModelNames(models),
+        }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setModelDefinitions((current) => {
+          if (!current.codex) return current;
+          const next = { ...current };
+          delete next.codex;
+          return next;
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [disabled]);
 
   const patchConfig = (updater: (current: AutoRouterConfig) => AutoRouterConfig) => {
     setConfig((current) => updater(current));
