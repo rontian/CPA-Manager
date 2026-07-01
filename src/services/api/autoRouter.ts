@@ -5,6 +5,21 @@ export interface AutoRouteTargetConfig {
   model: string;
 }
 
+export interface AutoRouteCandidateConfig {
+  provider: string;
+  model: string;
+  'cost-tier'?: string;
+  'capability-tier'?: string;
+  priority?: number;
+  'min-complexity'?: string;
+  'max-complexity'?: string;
+  disabled?: boolean;
+}
+
+export interface AutoRouterPolicyConfig {
+  strategy?: string;
+}
+
 export interface AutoRouterBrainConfig {
   provider?: string;
   model?: string;
@@ -35,6 +50,7 @@ export interface AutoRouterRoleConfig {
   'match-keywords'?: string[];
   'prompt-template'?: string;
   disabled?: boolean;
+  candidates?: AutoRouteCandidateConfig[];
 }
 
 export interface AutoRouterRolePresetConfig {
@@ -52,6 +68,7 @@ export interface AutoModelConfig {
   name: string;
   description?: string;
   'default-role'?: string;
+  policy?: AutoRouterPolicyConfig;
   fallback: AutoRouteTargetConfig;
   brain: AutoRouterBrainConfig;
   session: AutoRouterSessionConfig;
@@ -84,6 +101,8 @@ export interface AutoRouterDecision {
   confidence?: number;
   brain: boolean;
   sticky: boolean;
+  strategy?: string;
+  complexity?: string;
 }
 
 export interface AutoRouterDryRunRequest {

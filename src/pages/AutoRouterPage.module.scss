@@ -347,7 +347,8 @@
 .modelsList,
 .rolesList,
 .sessionsList,
-.presetCards {
+.presetCards,
+.candidateList {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -388,6 +389,14 @@
   border: 1px solid color-mix(in srgb, var(--border-color) 80%, transparent);
   border-radius: 8px;
   background: color-mix(in srgb, var(--bg-primary) 92%, transparent);
+}
+
+.candidateCard {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--primary-color) 18%, var(--border-color));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary-color) 4%, var(--bg-primary));
 }
 
 .presetsModal {

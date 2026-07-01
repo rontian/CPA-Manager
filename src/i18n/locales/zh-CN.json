@@ -2125,6 +2125,18 @@
     "description_label": "描述",
     "fallback_provider": "兜底后端类型",
     "fallback_model": "兜底模型",
+    "policy_strategy": "自动选型策略",
+    "policy_strategies": {
+      "balanced": "均衡",
+      "cost-first": "性价比优先",
+      "quality-first": "能力优先"
+    },
+    "complexity_levels": {
+      "low": "低复杂度",
+      "medium": "中复杂度",
+      "high": "高复杂度"
+    },
+    "complexity": "复杂度",
     "provider_hint": "后端类型对应 CLIProxyAPI 内部 provider，例如 codex、claude、gemini，或 OpenAI 兼容提供商生成的 openai-compatible-xxx；客户端仍然只请求 auto 模型。",
     "brain_title": "主脑判定",
     "brain_provider": "主脑后端类型",
@@ -2171,6 +2183,18 @@
     "preset_description": "预设描述",
     "role_provider": "角色后端类型",
     "role_model": "角色模型",
+    "candidates_title": "候选模型池",
+    "candidates_hint": "可选。配置后，Auto 会在当前角色内按策略、复杂度、成本和优先级选择具体模型；为空时使用上面的角色后端类型和角色模型。",
+    "add_candidate": "添加候选模型",
+    "no_candidates": "暂无候选模型，当前角色会直接使用角色后端类型和角色模型。",
+    "candidate_hint": "候选只影响当前角色内部的模型选择，不改变角色匹配规则。",
+    "candidate_provider": "候选后端类型",
+    "candidate_model": "候选模型",
+    "candidate_cost_tier": "候选成本等级",
+    "candidate_capability_tier": "候选能力等级",
+    "candidate_priority": "候选优先级",
+    "min_complexity": "最低复杂度",
+    "max_complexity": "最高复杂度",
     "cost_tier": "成本等级",
     "cost_tiers": {
       "low": "低成本",

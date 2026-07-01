@@ -12,6 +12,7 @@ import {
   type AutoModelConfig,
   type AutoRouterConfig,
   type AutoRouterDecision,
+  type AutoRouteCandidateConfig,
   type AutoRouterRoleConfig,
   type AutoRouterRolePresetConfig,
   type AutoRouterSessionSnapshot,
@@ -33,6 +34,8 @@ import styles from './AutoRouterPage.module.scss';
 
 const OPENAI_COMPATIBLE_PROVIDER_PREFIX = 'openai-compatible-';
 const COST_TIER_VALUES = ['low', 'medium', 'high'] as const;
+const POLICY_STRATEGY_VALUES = ['balanced', 'cost-first', 'quality-first'] as const;
+const COMPLEXITY_VALUES = ['low', 'medium', 'high'] as const;
 
 const listToText = (values?: string[]) => (Array.isArray(values) ? values.join('\n') : '');
 
@@ -71,6 +74,30 @@ const updateCustomPreset = (
   'role-presets': (config['role-presets'] ?? []).map((preset, index) =>
     index === presetIndex ? updater(preset) : preset
   ),
+});
+
+const updateRoleCandidate = (
+  config: AutoRouterConfig,
+  modelIndex: number,
+  roleIndex: number,
+  candidateIndex: number,
+  updater: (candidate: AutoRouteCandidateConfig) => AutoRouteCandidateConfig
+): AutoRouterConfig =>
+  updateRole(config, modelIndex, roleIndex, (role) => ({
+    ...role,
+    candidates: (role.candidates ?? []).map((candidate, index) =>
+      index === candidateIndex ? updater(candidate) : candidate
+    ),
+  }));
+
+const createRoleCandidate = (role: AutoRouterRoleConfig): AutoRouteCandidateConfig => ({
+  provider: role.provider ?? '',
+  model: role.model ?? '',
+  'cost-tier': role['cost-tier'] ?? 'medium',
+  'capability-tier': 'medium',
+  priority: role.priority ?? 0,
+  'min-complexity': 'low',
+  'max-complexity': 'high',
 });
 
 const normalizeError = (error: unknown) =>
@@ -339,6 +366,22 @@ export function AutoRouterPage() {
       COST_TIER_VALUES.map((value) => ({
         value,
         label: t(`auto_router.cost_tiers.${value}`),
+      })),
+    [t]
+  );
+  const policyStrategyOptions = useMemo(
+    () =>
+      POLICY_STRATEGY_VALUES.map((value) => ({
+        value,
+        label: t(`auto_router.policy_strategies.${value}`),
+      })),
+    [t]
+  );
+  const complexityOptions = useMemo(
+    () =>
+      COMPLEXITY_VALUES.map((value) => ({
+        value,
+        label: t(`auto_router.complexity_levels.${value}`),
       })),
     [t]
   );
@@ -685,6 +728,22 @@ export function AutoRouterPage() {
                               )
                             }
                           />
+                          <div className={styles.presetSelectGroup}>
+                            <label>{t('auto_router.policy_strategy')}</label>
+                            <Select
+                              value={model.policy?.strategy ?? 'balanced'}
+                              options={policyStrategyOptions}
+                              disabled={disabled}
+                              onChange={(value) =>
+                                patchConfig((current) =>
+                                  updateModel(current, modelIndex, (item) => ({
+                                    ...item,
+                                    policy: { ...(item.policy ?? {}), strategy: value },
+                                  }))
+                                )
+                              }
+                            />
+                          </div>
                           <Input
                             label={t('auto_router.description_label')}
                             className={styles.fullWidth}
@@ -1131,6 +1190,267 @@ export function AutoRouterPage() {
                                         )
                                       }
                                     />
+                                    <div className={`${styles.section} ${styles.fullWidth}`}>
+                                      <div className={styles.panelHeader}>
+                                        <div>
+                                          <h3>{t('auto_router.candidates_title')}</h3>
+                                          <p>{t('auto_router.candidates_hint')}</p>
+                                        </div>
+                                        <Button
+                                          variant="secondary"
+                                          size="sm"
+                                          disabled={disabled}
+                                          onClick={() =>
+                                            patchConfig((current) =>
+                                              updateRole(
+                                                current,
+                                                modelIndex,
+                                                roleIndex,
+                                                (item) => ({
+                                                  ...item,
+                                                  candidates: [
+                                                    ...(item.candidates ?? []),
+                                                    createRoleCandidate(item),
+                                                  ],
+                                                })
+                                              )
+                                            )
+                                          }
+                                        >
+                                          {t('auto_router.add_candidate')}
+                                        </Button>
+                                      </div>
+                                      <div className={styles.candidateList}>
+                                        {(role.candidates ?? []).length === 0 && (
+                                          <div className={styles.emptyState}>
+                                            {t('auto_router.no_candidates')}
+                                          </div>
+                                        )}
+                                        {(role.candidates ?? []).map(
+                                          (candidate, candidateIndex) => (
+                                            <div
+                                              className={styles.candidateCard}
+                                              key={`${candidate.provider}-${candidate.model}-${candidateIndex}`}
+                                            >
+                                              <div className={styles.cardHeader}>
+                                                <div>
+                                                  <h3>
+                                                    {candidate.provider || t('common.not_set')}/
+                                                    {candidate.model || t('common.not_set')}
+                                                  </h3>
+                                                  <p>{t('auto_router.candidate_hint')}</p>
+                                                </div>
+                                                <div className={styles.rowActions}>
+                                                  <ToggleSwitch
+                                                    checked={!candidate.disabled}
+                                                    onChange={(enabled) =>
+                                                      patchConfig((current) =>
+                                                        updateRoleCandidate(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          candidateIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            disabled: !enabled,
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                    disabled={disabled}
+                                                    label={
+                                                      !candidate.disabled
+                                                        ? t('common.enabled')
+                                                        : t('common.disabled')
+                                                    }
+                                                  />
+                                                  <Button
+                                                    variant="danger"
+                                                    size="sm"
+                                                    disabled={disabled}
+                                                    onClick={() =>
+                                                      patchConfig((current) =>
+                                                        updateRole(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            candidates: (
+                                                              item.candidates ?? []
+                                                            ).filter(
+                                                              (_, index) => index !== candidateIndex
+                                                            ),
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                  >
+                                                    {t('common.delete')}
+                                                  </Button>
+                                                </div>
+                                              </div>
+                                              <div className={styles.formGrid}>
+                                                <CandidateInput
+                                                  id={`auto-router-role-candidate-provider-${modelIndex}-${roleIndex}-${candidateIndex}`}
+                                                  label={t('auto_router.candidate_provider')}
+                                                  value={candidate.provider}
+                                                  options={backendCatalog.providers}
+                                                  disabled={disabled}
+                                                  onChange={(value) =>
+                                                    patchConfig((current) =>
+                                                      updateRoleCandidate(
+                                                        current,
+                                                        modelIndex,
+                                                        roleIndex,
+                                                        candidateIndex,
+                                                        (item) => ({
+                                                          ...item,
+                                                          provider: value,
+                                                        })
+                                                      )
+                                                    )
+                                                  }
+                                                />
+                                                <CandidateInput
+                                                  id={`auto-router-role-candidate-model-${modelIndex}-${roleIndex}-${candidateIndex}`}
+                                                  label={t('auto_router.candidate_model')}
+                                                  value={candidate.model}
+                                                  options={getModelOptions(candidate.provider)}
+                                                  disabled={disabled}
+                                                  onChange={(value) =>
+                                                    patchConfig((current) =>
+                                                      updateRoleCandidate(
+                                                        current,
+                                                        modelIndex,
+                                                        roleIndex,
+                                                        candidateIndex,
+                                                        (item) => ({
+                                                          ...item,
+                                                          model: value,
+                                                        })
+                                                      )
+                                                    )
+                                                  }
+                                                />
+                                                <div className={styles.presetSelectGroup}>
+                                                  <label>
+                                                    {t('auto_router.candidate_cost_tier')}
+                                                  </label>
+                                                  <Select
+                                                    value={candidate['cost-tier'] ?? 'medium'}
+                                                    options={costTierOptions}
+                                                    disabled={disabled}
+                                                    onChange={(value) =>
+                                                      patchConfig((current) =>
+                                                        updateRoleCandidate(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          candidateIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            'cost-tier': value,
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                  />
+                                                </div>
+                                                <div className={styles.presetSelectGroup}>
+                                                  <label>
+                                                    {t('auto_router.candidate_capability_tier')}
+                                                  </label>
+                                                  <Select
+                                                    value={candidate['capability-tier'] ?? 'medium'}
+                                                    options={costTierOptions}
+                                                    disabled={disabled}
+                                                    onChange={(value) =>
+                                                      patchConfig((current) =>
+                                                        updateRoleCandidate(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          candidateIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            'capability-tier': value,
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                  />
+                                                </div>
+                                                <Input
+                                                  label={t('auto_router.candidate_priority')}
+                                                  type="number"
+                                                  value={String(candidate.priority ?? 0)}
+                                                  disabled={disabled}
+                                                  onChange={(event) =>
+                                                    patchConfig((current) =>
+                                                      updateRoleCandidate(
+                                                        current,
+                                                        modelIndex,
+                                                        roleIndex,
+                                                        candidateIndex,
+                                                        (item) => ({
+                                                          ...item,
+                                                          priority: Number(event.target.value),
+                                                        })
+                                                      )
+                                                    )
+                                                  }
+                                                />
+                                                <div className={styles.presetSelectGroup}>
+                                                  <label>{t('auto_router.min_complexity')}</label>
+                                                  <Select
+                                                    value={candidate['min-complexity'] ?? 'low'}
+                                                    options={complexityOptions}
+                                                    disabled={disabled}
+                                                    onChange={(value) =>
+                                                      patchConfig((current) =>
+                                                        updateRoleCandidate(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          candidateIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            'min-complexity': value,
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                  />
+                                                </div>
+                                                <div className={styles.presetSelectGroup}>
+                                                  <label>{t('auto_router.max_complexity')}</label>
+                                                  <Select
+                                                    value={candidate['max-complexity'] ?? 'high'}
+                                                    options={complexityOptions}
+                                                    disabled={disabled}
+                                                    onChange={(value) =>
+                                                      patchConfig((current) =>
+                                                        updateRoleCandidate(
+                                                          current,
+                                                          modelIndex,
+                                                          roleIndex,
+                                                          candidateIndex,
+                                                          (item) => ({
+                                                            ...item,
+                                                            'max-complexity': value,
+                                                          })
+                                                        )
+                                                      )
+                                                    }
+                                                  />
+                                                </div>
+                                              </div>
+                                            </div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
                                     <div className={styles.presetSelectGroup}>
                                       <label>{t('auto_router.cost_tier')}</label>
                                       <Select
@@ -1270,6 +1590,16 @@ export function AutoRouterPage() {
                     {dryRunDecision.provider}/{dryRunDecision.model}
                   </span>
                   <span>{dryRunDecision.reason || t('common.not_set')}</span>
+                  {dryRunDecision.strategy && (
+                    <span>
+                      {t('auto_router.policy_strategy')}: {dryRunDecision.strategy}
+                    </span>
+                  )}
+                  {dryRunDecision.complexity && (
+                    <span>
+                      {t('auto_router.complexity')}: {dryRunDecision.complexity}
+                    </span>
+                  )}
                   <span>
                     {dryRunDecision.sticky
                       ? t('auto_router.sticky_hit')

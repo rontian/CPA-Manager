@@ -2125,6 +2125,18 @@
     "description_label": "Description",
     "fallback_provider": "Fallback Backend",
     "fallback_model": "Fallback Model",
+    "policy_strategy": "Auto Selection Strategy",
+    "policy_strategies": {
+      "balanced": "Balanced",
+      "cost-first": "Value first",
+      "quality-first": "Capability first"
+    },
+    "complexity_levels": {
+      "low": "Low complexity",
+      "medium": "Medium complexity",
+      "high": "High complexity"
+    },
+    "complexity": "Complexity",
     "provider_hint": "Backend maps to CLIProxyAPI's internal provider, such as codex, claude, gemini, or an OpenAI-compatible provider name. Clients still request only the auto model.",
     "brain_title": "Brain Judge",
     "brain_provider": "Brain Backend",
@@ -2171,6 +2183,18 @@
     "preset_description": "Preset Description",
     "role_provider": "Role Backend",
     "role_model": "Model",
+    "candidates_title": "Candidate Model Pool",
+    "candidates_hint": "Optional. When configured, Auto chooses a concrete model inside this role by strategy, complexity, cost, and priority. If empty, the role backend/model above is used directly.",
+    "add_candidate": "Add Candidate",
+    "no_candidates": "No candidate models. This role will use the role backend and model directly.",
+    "candidate_hint": "Candidates only affect model selection inside this role. They do not change role matching.",
+    "candidate_provider": "Candidate Backend",
+    "candidate_model": "Candidate Model",
+    "candidate_cost_tier": "Candidate Cost Tier",
+    "candidate_capability_tier": "Candidate Capability Tier",
+    "candidate_priority": "Candidate Priority",
+    "min_complexity": "Min Complexity",
+    "max_complexity": "Max Complexity",
     "cost_tier": "Cost Tier",
     "cost_tiers": {
       "low": "Low cost",
