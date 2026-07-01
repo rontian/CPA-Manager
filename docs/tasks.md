@@ -8,10 +8,6 @@
 - [x] Use typed Chinese commit messages for future local-extension work.
 - [x] Add Python-free config sync binaries for production hosts.
 
-## OAuth Login UX
-
-- [x] Hide manual callback input by default for local OAuth login flows.
-
 ## Usage Service Dev Workflow
 
 - [x] Make `make dev` reliably start both Vite and Usage Service.

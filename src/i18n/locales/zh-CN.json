@@ -1006,8 +1006,6 @@
     "oauth_callback_label": "回调 URL",
     "oauth_callback_placeholder": "http://localhost:1455/auth/callback?code=...&state=...",
     "oauth_callback_hint": "远程浏览器模式：当授权跳转到 http://localhost:... 后，复制完整 URL 并提交到这里。",
-    "oauth_callback_manual_toggle": "手动回调兜底",
-    "oauth_callback_manual_hide": "收起手动回调",
     "oauth_callback_button": "提交回调 URL",
     "oauth_callback_required": "请先粘贴完整的回调 URL。",
     "oauth_callback_success": "回调 URL 已提交，请继续等待认证。",
