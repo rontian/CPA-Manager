@@ -15,6 +15,7 @@
 - [x] Document root-level dev data path behavior.
 - [x] Keep local Makefile commands independent from AI-only `rtk proxy`.
 - [x] Support Usage Service setup under both `/setup` and `/usage-service/setup`.
+- [x] Route frontend Usage Service setup calls through `/usage-service/setup`.
 
 ## Auto Router V1
 
