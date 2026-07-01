@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
+import { hasDisableAllModelsRule } from '@/components/providers/utils';
 import {
   autoRouterApi,
   createAutoRole,
@@ -107,6 +108,18 @@ const collectDefinitionModelNames = (
   models: { id: string; display_name?: string; type?: string; owned_by?: string }[]
 ) => uniqueStrings(models.map((model) => model.id));
 
+const enabledProviderKeyConfigs = <T extends { excludedModels?: string[] }>(items?: T[]) =>
+  (items ?? []).filter((item) => !hasDisableAllModelsRule(item.excludedModels));
+
+const enabledOpenAICompatibleProviders = (providers: Config['openaiCompatibility'] = []) =>
+  providers.filter(
+    (provider) =>
+      provider.disabled !== true &&
+      Boolean(provider.name?.trim()) &&
+      Boolean(provider.baseUrl?.trim()) &&
+      (provider.apiKeyEntries?.length ?? 0) > 0
+  );
+
 type BackendCatalog = {
   providers: string[];
   modelsByProvider: Record<string, string[]>;
@@ -128,7 +141,6 @@ const addProviderModels = (catalog: BackendCatalog, provider: string, models: st
 
 const buildBackendCatalog = (
   managerConfig: Config | null,
-  autoConfig: AutoRouterConfig,
   modelDefinitions: ModelDefinitionsByProvider
 ) => {
   const catalog: BackendCatalog = {
@@ -136,40 +148,49 @@ const buildBackendCatalog = (
     modelsByProvider: {},
     allModels: [],
   };
+  const geminiConfigs = enabledProviderKeyConfigs(managerConfig?.geminiApiKeys);
+  const codexConfigs = enabledProviderKeyConfigs(managerConfig?.codexApiKeys);
+  const claudeConfigs = enabledProviderKeyConfigs(managerConfig?.claudeApiKeys);
+  const vertexConfigs = enabledProviderKeyConfigs(managerConfig?.vertexApiKeys);
+  const openAIProviders = enabledOpenAICompatibleProviders(managerConfig?.openaiCompatibility);
 
-  addProviderModels(
-    catalog,
-    'gemini',
-    (managerConfig?.geminiApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
-  );
-  addProviderModels(catalog, 'codex', [
-    ...(managerConfig?.codexApiKeys ?? []).flatMap((item) => collectModelNames(item.models)),
-    ...(modelDefinitions.codex ?? []),
-  ]);
-  addProviderModels(
-    catalog,
-    'claude',
-    (managerConfig?.claudeApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
-  );
-  addProviderModels(
-    catalog,
-    'vertex',
-    (managerConfig?.vertexApiKeys ?? []).flatMap((item) => collectModelNames(item.models))
-  );
-  addProviderModels(catalog, 'openai-compatibility');
+  if (geminiConfigs.length > 0) {
+    addProviderModels(
+      catalog,
+      'gemini',
+      geminiConfigs.flatMap((item) => collectModelNames(item.models))
+    );
+  }
+  if (codexConfigs.length > 0) {
+    addProviderModels(catalog, 'codex', [
+      ...codexConfigs.flatMap((item) => collectModelNames(item.models)),
+      ...(modelDefinitions.codex ?? []),
+    ]);
+  }
+  if (claudeConfigs.length > 0) {
+    addProviderModels(
+      catalog,
+      'claude',
+      claudeConfigs.flatMap((item) => collectModelNames(item.models))
+    );
+  }
+  if (vertexConfigs.length > 0) {
+    addProviderModels(
+      catalog,
+      'vertex',
+      vertexConfigs.flatMap((item) => collectModelNames(item.models))
+    );
+  }
+  if (openAIProviders.length > 0) {
+    addProviderModels(catalog, 'openai-compatibility');
+  }
 
-  (managerConfig?.openaiCompatibility ?? []).forEach((provider) => {
+  openAIProviders.forEach((provider) => {
     addProviderModels(
       catalog,
       openAICompatibleProviderKey(provider.name),
       collectModelNames(provider.models)
     );
-  });
-
-  autoConfig.models.forEach((model) => {
-    addProviderModels(catalog, model.fallback.provider, [model.fallback.model]);
-    addProviderModels(catalog, model.brain.provider ?? '', [model.brain.model ?? '']);
-    model.roles.forEach((role) => addProviderModels(catalog, role.provider, [role.model]));
   });
 
   catalog.providers = uniqueStrings(catalog.providers).sort((a, b) => a.localeCompare(b));
@@ -328,8 +349,8 @@ export function AutoRouterPage() {
     [rolePresets, t]
   );
   const backendCatalog = useMemo(
-    () => buildBackendCatalog(managerConfig, config, modelDefinitions),
-    [managerConfig, config, modelDefinitions]
+    () => buildBackendCatalog(managerConfig, modelDefinitions),
+    [managerConfig, modelDefinitions]
   );
   const getModelOptions = useCallback(
     (provider: string) => {

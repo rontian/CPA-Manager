@@ -10,6 +10,7 @@
 
 ## Auto Router V1
 
+- [x] Filter disabled provider/auth configs out of Auto Router provider and model candidates.
 - [x] Split built-in role recommendations into capability-first and value-first groups.
 - [x] Rebalance built-in role recommendations toward cost-effective routing.
 - [x] Exclude provider model aliases from Auto Router executable model candidates.
