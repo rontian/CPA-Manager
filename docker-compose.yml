@@ -5,6 +5,11 @@ services:
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-dev}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        ALPINE_MIRROR: ${ALPINE_MIRROR:-https://mirrors.aliyun.com/alpine}
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
+        GOSUMDB: ${GOSUMDB:-off}
+        GITHUB_PROXY_PREFIX: ${GITHUB_PROXY_PREFIX:-https://ghfast.top/https://github.com}
     image: seakee/cpa-manager:latest
     restart: unless-stopped
     ports:

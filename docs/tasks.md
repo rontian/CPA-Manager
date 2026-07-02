@@ -7,6 +7,7 @@
 - [x] Add task/status maintenance rules to `AGENTS.md`.
 - [x] Use typed Chinese commit messages for future local-extension work.
 - [x] Add Python-free config sync binaries for production hosts.
+- [x] Make Docker build mirrors configurable while keeping domestic defaults.
 
 ## Usage Service Dev Workflow
 

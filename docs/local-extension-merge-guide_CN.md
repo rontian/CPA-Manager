@@ -30,6 +30,7 @@ git merge main
 | Auto Router                       | Auto Router 页面、预设管理、模型选择策略、角色候选池 | `src/pages/AutoRouterPage.tsx`、`src/features/autoRouter/*`、`src/services/api/autoRouter.ts`、`src/router/MainRoutes.tsx`、`src/components/layout/MainLayout.tsx` | 官方若新增自动路由或模型策略页面，需要判断合并、迁移或保留本地实现；候选池 UI 必须兼容旧的单 provider/model 角色配置              |
 | 模型能力清单                      | 手动维护的主流模型能力参考                           | `src/pages/ModelCatalogPage.tsx`、`src/features/modelCatalog/*`、`src/router/MainRoutes.tsx`、`src/components/layout/MainLayout.tsx`                               | 清单数据只属于 CPA-Manager 前端静态展示和搜索，不依赖 CLIProxyAPI；如果引入 AI 辅助刷新，只能生成待审核补丁，不能直接覆盖静态清单 |
 | 插件 OAuth 登录                   | OAuth 登录页动态发现并渲染支持认证的插件             | `src/pages/OAuthPage.tsx`、`src/services/api/oauth.ts`、`src/services/api/plugins.ts`、`src/i18n/locales/*`                                                          | 不要为单个插件硬编码独立认证页；通过 `/plugins` 的 `effective_enabled/supports_oauth/oauth_provider` 判断入口是否显示             |
+| Docker 构建源配置                 | 国内构建源默认值和可覆盖 build args                  | `Dockerfile`、`Dockerfile.usage-service`、`docker-compose.yml`、`docker-compose.usage.yml`                                                                           | 当前主构建入口是 `Dockerfile`；`Dockerfile.usage-service` 是旧入口/兼容入口，仍需保持 npm/go/apk/GitHub proxy 策略一致，避免旧部署路径回退到国外源；默认国内源便于本地/NAS 构建，但保留 `NPM_REGISTRY`、`ALPINE_MIRROR`、`GOPROXY`、`GOSUMDB`、`GITHUB_PROXY_PREFIX` 可覆盖；Docker 托管面板只挂 `/data`，不要求挂 `config.json` |
 
 ## 高风险文件
 
@@ -83,6 +84,14 @@ npx vitest run src/features/autoRouter/rolePresets.test.ts
 
 ```bash
 npm run test
+```
+
+如果冲突涉及 Dockerfile 或 compose 配置，至少验证：
+
+```bash
+docker compose config
+docker compose build
+docker compose -f docker-compose.usage.yml config
 ```
 
 如果全量测试存在已知非本次引入失败，需要在合并记录中说明。
