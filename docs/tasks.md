@@ -17,6 +17,7 @@
 - [x] Support Usage Service setup under both `/setup` and `/usage-service/setup`.
 - [x] Route frontend Usage Service setup calls through `/usage-service/setup`.
 - [x] Proxy CPA Management API requests through Usage Service in Vite dev mode.
+- [x] Use the real CPA API base, not the Usage Service/Vite base, when fetching `/v1/models`.
 
 ## Auto Router V1
 
@@ -44,6 +45,19 @@
 - [x] Refresh built-in role model recommendations for current mainstream models.
 - [x] Add model capability catalog page grouped by provider.
 - [x] Expand model catalog capability tags beyond role examples into a broader taxonomy.
+
+## Plugin OAuth UI
+
+- [x] Add a management API client for CLIProxyAPI plugin discovery.
+- [x] Render OAuth-capable enabled plugins on the OAuth login page.
+- [x] Reuse the existing OAuth start, polling, callback, and auth-file navigation flow for plugin providers.
+- [x] Add Chinese-first UI labels and fallback text for plugin authentication cards.
+- [x] Validate build or focused tests after the UI integration.
+- [x] Split plugin OAuth startup and waiting states so users see authorization-link loading distinctly.
+- [x] Display plugin OAuth startup failures instead of leaving the button in a waiting state.
+- [x] Back off plugin OAuth polling when the provider asks to slow down.
+- [x] Keep OAuth excluded-model and alias provider pickers from treating config endpoint names as providers.
+- [x] Support model autocomplete for plugin OAuth providers such as GitHub Copilot.
 
 ## Future Direction
 

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useNotificationStore, useThemeStore } from '@/stores';
 import { oauthApi, type OAuthProvider } from '@/services/api/oauth';
+import { pluginsApi, type PluginListEntry } from '@/services/api/plugins';
 import { vertexApi, type VertexImportResponse } from '@/services/api/vertex';
 import { copyToClipboard } from '@/utils/clipboard';
 import styles from './OAuthPage.module.scss';
@@ -22,7 +23,9 @@ import iconGrokDark from '@/assets/icons/grok-dark.svg';
 interface ProviderState {
   url?: string;
   state?: string;
-  status?: 'idle' | 'waiting' | 'success' | 'error';
+  metadata?: Record<string, unknown>;
+  status?: 'idle' | 'starting' | 'waiting' | 'success' | 'error';
+  statusMessage?: string;
   error?: string;
   polling?: boolean;
   projectId?: string;
@@ -31,6 +34,24 @@ interface ProviderState {
   callbackSubmitting?: boolean;
   callbackStatus?: 'success' | 'error';
   callbackError?: string;
+}
+
+interface OAuthDisplayProvider {
+  id: string;
+  title: string;
+  hint: string;
+  urlLabel: string;
+  icon?: string | { light: string; dark: string };
+  isPlugin?: boolean;
+  callbackSupported: boolean;
+}
+
+interface PluginOAuthProvider {
+  id: string;
+  title: string;
+  hint: string;
+  urlLabel: string;
+  icon?: string;
 }
 
 interface VertexImportResult {
@@ -64,13 +85,55 @@ function getErrorStatus(error: unknown): number | undefined {
   return typeof error.status === 'number' ? error.status : undefined;
 }
 
-const PROVIDERS: { id: OAuthProvider; titleKey: string; hintKey: string; urlLabelKey: string; icon: string | { light: string; dark: string } }[] = [
-  { id: 'codex', titleKey: 'auth_login.codex_oauth_title', hintKey: 'auth_login.codex_oauth_hint', urlLabelKey: 'auth_login.codex_oauth_url_label', icon: iconCodex },
-  { id: 'anthropic', titleKey: 'auth_login.anthropic_oauth_title', hintKey: 'auth_login.anthropic_oauth_hint', urlLabelKey: 'auth_login.anthropic_oauth_url_label', icon: iconClaude },
-  { id: 'antigravity', titleKey: 'auth_login.antigravity_oauth_title', hintKey: 'auth_login.antigravity_oauth_hint', urlLabelKey: 'auth_login.antigravity_oauth_url_label', icon: iconAntigravity },
-  { id: 'gemini-cli', titleKey: 'auth_login.gemini_cli_oauth_title', hintKey: 'auth_login.gemini_cli_oauth_hint', urlLabelKey: 'auth_login.gemini_cli_oauth_url_label', icon: iconGemini },
-  { id: 'kimi', titleKey: 'auth_login.kimi_oauth_title', hintKey: 'auth_login.kimi_oauth_hint', urlLabelKey: 'auth_login.kimi_oauth_url_label', icon: { light: iconKimiLight, dark: iconKimiDark } },
-  { id: 'xai', titleKey: 'auth_login.xai_oauth_title', hintKey: 'auth_login.xai_oauth_hint', urlLabelKey: 'auth_login.xai_oauth_url_label', icon: { light: iconGrok, dark: iconGrokDark } }
+const PROVIDERS: {
+  id: OAuthProvider;
+  titleKey: string;
+  hintKey: string;
+  urlLabelKey: string;
+  icon: string | { light: string; dark: string };
+}[] = [
+  {
+    id: 'codex',
+    titleKey: 'auth_login.codex_oauth_title',
+    hintKey: 'auth_login.codex_oauth_hint',
+    urlLabelKey: 'auth_login.codex_oauth_url_label',
+    icon: iconCodex,
+  },
+  {
+    id: 'anthropic',
+    titleKey: 'auth_login.anthropic_oauth_title',
+    hintKey: 'auth_login.anthropic_oauth_hint',
+    urlLabelKey: 'auth_login.anthropic_oauth_url_label',
+    icon: iconClaude,
+  },
+  {
+    id: 'antigravity',
+    titleKey: 'auth_login.antigravity_oauth_title',
+    hintKey: 'auth_login.antigravity_oauth_hint',
+    urlLabelKey: 'auth_login.antigravity_oauth_url_label',
+    icon: iconAntigravity,
+  },
+  {
+    id: 'gemini-cli',
+    titleKey: 'auth_login.gemini_cli_oauth_title',
+    hintKey: 'auth_login.gemini_cli_oauth_hint',
+    urlLabelKey: 'auth_login.gemini_cli_oauth_url_label',
+    icon: iconGemini,
+  },
+  {
+    id: 'kimi',
+    titleKey: 'auth_login.kimi_oauth_title',
+    hintKey: 'auth_login.kimi_oauth_hint',
+    urlLabelKey: 'auth_login.kimi_oauth_url_label',
+    icon: { light: iconKimiLight, dark: iconKimiDark },
+  },
+  {
+    id: 'xai',
+    titleKey: 'auth_login.xai_oauth_title',
+    hintKey: 'auth_login.xai_oauth_hint',
+    urlLabelKey: 'auth_login.xai_oauth_url_label',
+    icon: { light: iconGrok, dark: iconGrokDark },
+  },
 ];
 
 const CALLBACK_SUPPORTED: OAuthProvider[] = [
@@ -78,15 +141,42 @@ const CALLBACK_SUPPORTED: OAuthProvider[] = [
   'anthropic',
   'antigravity',
   'gemini-cli',
-  'xai'
+  'xai',
 ];
+const BUILTIN_PROVIDER_IDS = new Set<string>(PROVIDERS.map((provider) => provider.id));
 const XAI_CALLBACK_URL = 'http://127.0.0.1:56121/callback';
 const SUCCESS_RESET_DELAY_MS = 5000;
 const getProviderI18nPrefix = (provider: OAuthProvider) => provider.replace('-', '_');
 const getAuthKey = (provider: OAuthProvider, suffix: string) =>
   `auth_login.${getProviderI18nPrefix(provider)}_${suffix}`;
 
-const getIcon = (icon: string | { light: string; dark: string }, theme: 'light' | 'dark') => {
+const isBuiltinProvider = (provider: string): provider is OAuthProvider =>
+  BUILTIN_PROVIDER_IDS.has(provider);
+
+const pluginTitle = (plugin: PluginListEntry): string => {
+  const title = plugin.metadata?.name?.trim() || plugin.oauth_provider?.trim() || plugin.id;
+  return title || plugin.id;
+};
+
+const pluginOAuthProvider = (plugin: PluginListEntry): PluginOAuthProvider | null => {
+  if (!plugin.effective_enabled || !plugin.supports_oauth || !plugin.oauth_provider) return null;
+  const id = plugin.oauth_provider.trim();
+  if (!id || BUILTIN_PROVIDER_IDS.has(id)) return null;
+  const title = pluginTitle(plugin);
+  return {
+    id,
+    title,
+    hint: '',
+    urlLabel: '',
+    icon: plugin.logo || plugin.metadata?.logo || undefined,
+  };
+};
+
+const getIcon = (
+  icon: string | { light: string; dark: string } | undefined,
+  theme: 'light' | 'dark'
+) => {
+  if (!icon) return undefined;
   return typeof icon === 'string' ? icon : icon[theme];
 };
 
@@ -166,14 +256,16 @@ export function OAuthPage() {
   const navigate = useNavigate();
   const { showNotification } = useNotificationStore();
   const resolvedTheme = useThemeStore((state) => state.resolvedTheme);
-  const [states, setStates] = useState<Record<OAuthProvider, ProviderState>>({} as Record<OAuthProvider, ProviderState>);
+  const [states, setStates] = useState<Record<string, ProviderState>>({});
+  const [pluginProviders, setPluginProviders] = useState<PluginOAuthProvider[]>([]);
+  const [pluginLoadError, setPluginLoadError] = useState<string>('');
   const [vertexState, setVertexState] = useState<VertexImportState>({
     fileName: '',
     location: '',
-    loading: false
+    loading: false,
   });
-  const pollingTimers = useRef<Partial<Record<OAuthProvider, number>>>({});
-  const successResetTimers = useRef<Partial<Record<OAuthProvider, number>>>({});
+  const pollingTimers = useRef<Record<string, number | undefined>>({});
+  const successResetTimers = useRef<Record<string, number | undefined>>({});
   const vertexFileInputRef = useRef<HTMLInputElement | null>(null);
 
   const clearTimers = useCallback(() => {
@@ -193,14 +285,37 @@ export function OAuthPage() {
     };
   }, [clearTimers]);
 
-  const updateProviderState = (provider: OAuthProvider, next: Partial<ProviderState>) => {
+  useEffect(() => {
+    let cancelled = false;
+    const loadPlugins = async () => {
+      try {
+        const res = await pluginsApi.list();
+        if (cancelled) return;
+        const oauthPlugins = (res.plugins || [])
+          .map(pluginOAuthProvider)
+          .filter((item): item is PluginOAuthProvider => Boolean(item));
+        setPluginProviders(oauthPlugins);
+        setPluginLoadError('');
+      } catch (err: unknown) {
+        if (cancelled) return;
+        setPluginProviders([]);
+        setPluginLoadError(getErrorMessage(err));
+      }
+    };
+    void loadPlugins();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const updateProviderState = (provider: string, next: Partial<ProviderState>) => {
     setStates((prev) => ({
       ...prev,
-      [provider]: { ...(prev[provider] ?? {}), ...next }
+      [provider]: { ...(prev[provider] ?? {}), ...next },
     }));
   };
 
-  const clearPollingTimer = (provider: OAuthProvider) => {
+  const clearPollingTimer = (provider: string) => {
     const timer = pollingTimers.current[provider];
     if (timer !== undefined) {
       window.clearInterval(timer);
@@ -208,7 +323,7 @@ export function OAuthPage() {
     }
   };
 
-  const clearSuccessResetTimer = (provider: OAuthProvider) => {
+  const clearSuccessResetTimer = (provider: string) => {
     const timer = successResetTimers.current[provider];
     if (timer !== undefined) {
       window.clearTimeout(timer);
@@ -216,12 +331,12 @@ export function OAuthPage() {
     }
   };
 
-  const clearProviderTimers = (provider: OAuthProvider) => {
+  const clearProviderTimers = (provider: string) => {
     clearPollingTimer(provider);
     clearSuccessResetTimer(provider);
   };
 
-  const resetProviderAttempt = (provider: OAuthProvider) => {
+  const resetProviderAttempt = (provider: string) => {
     clearProviderTimers(provider);
     setStates((prev) => {
       const current = prev[provider] ?? {};
@@ -231,57 +346,114 @@ export function OAuthPage() {
       }
       return {
         ...prev,
-        [provider]: next
+        [provider]: next,
       };
     });
   };
 
-  const completeProviderAuth = (provider: OAuthProvider) => {
+  const getProviderTitle = useCallback(
+    (provider: string) => {
+      if (isBuiltinProvider(provider)) return t(getAuthKey(provider, 'oauth_title'));
+      return pluginProviders.find((item) => item.id === provider)?.title || provider;
+    },
+    [pluginProviders, t]
+  );
+
+  const getProviderText = useCallback(
+    (provider: string, suffix: string, fallback: string) => {
+      if (isBuiltinProvider(provider))
+        return t(getAuthKey(provider, suffix), { defaultValue: fallback });
+      return t(`auth_login.plugin_${suffix}`, {
+        provider: getProviderTitle(provider),
+        defaultValue: fallback,
+      });
+    },
+    [getProviderTitle, t]
+  );
+
+  const completeProviderAuth = (provider: string) => {
     clearPollingTimer(provider);
     clearSuccessResetTimer(provider);
     updateProviderState(provider, {
       url: undefined,
       state: undefined,
       status: 'success',
+      statusMessage: undefined,
       error: undefined,
       polling: false,
       callbackUrl: '',
       callbackSubmitting: false,
       callbackStatus: undefined,
-      callbackError: undefined
+      callbackError: undefined,
     });
     successResetTimers.current[provider] = window.setTimeout(() => {
       resetProviderAttempt(provider);
     }, SUCCESS_RESET_DELAY_MS);
   };
 
-  const startPolling = (provider: OAuthProvider, state: string) => {
+  const startPolling = (provider: string, state: string, intervalSeconds?: number) => {
     clearPollingTimer(provider);
-    const timer = window.setInterval(async () => {
+    let pollIntervalMs = Math.max(5, intervalSeconds || 5) * 1000;
+    const scheduleNext = () => {
+      pollingTimers.current[provider] = window.setTimeout(pollOnce, pollIntervalMs);
+    };
+    const stopPolling = () => {
+      const timer = pollingTimers.current[provider];
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+        delete pollingTimers.current[provider];
+      }
+    };
+    const pollOnce = async () => {
       try {
         const res = await oauthApi.getAuthStatus(state);
         if (res.status === 'ok') {
+          stopPolling();
           completeProviderAuth(provider);
-          showNotification(t(getAuthKey(provider, 'oauth_status_success')), 'success');
-        } else if (res.status === 'error') {
-          updateProviderState(provider, { status: 'error', error: res.error, polling: false });
           showNotification(
-            `${t(getAuthKey(provider, 'oauth_status_error'))} ${res.error || ''}`,
+            getProviderText(
+              provider,
+              'oauth_status_success',
+              `${getProviderTitle(provider)} 认证成功！`
+            ),
+            'success'
+          );
+        } else if (res.status === 'error') {
+          updateProviderState(provider, {
+            status: 'error',
+            statusMessage: undefined,
+            error: res.error,
+            polling: false,
+          });
+          showNotification(
+            `${getProviderText(provider, 'oauth_status_error', '认证失败:')} ${res.error || ''}`,
             'error'
           );
-          window.clearInterval(timer);
-          delete pollingTimers.current[provider];
+          stopPolling();
+        } else if (res.status === 'wait') {
+          if (/slow down/i.test(res.message || '')) {
+            pollIntervalMs += 5000;
+          }
+          updateProviderState(provider, {
+            status: 'waiting',
+            statusMessage: res.message,
+          });
+          scheduleNext();
         }
       } catch (err: unknown) {
-        updateProviderState(provider, { status: 'error', error: getErrorMessage(err), polling: false });
-        window.clearInterval(timer);
-        delete pollingTimers.current[provider];
+        updateProviderState(provider, {
+          status: 'error',
+          statusMessage: undefined,
+          error: getErrorMessage(err),
+          polling: false,
+        });
+        stopPolling();
       }
-    }, 3000);
-    pollingTimers.current[provider] = timer;
+    };
+    scheduleNext();
   };
 
-  const startAuth = async (provider: OAuthProvider) => {
+  const startAuth = async (provider: string) => {
     clearProviderTimers(provider);
     const geminiState = provider === 'gemini-cli' ? states[provider] : undefined;
     const rawProjectId = provider === 'gemini-cli' ? (geminiState?.projectId || '').trim() : '';
@@ -297,12 +469,14 @@ export function OAuthPage() {
     updateProviderState(provider, {
       url: undefined,
       state: undefined,
-      status: 'waiting',
+      metadata: undefined,
+      status: 'starting',
+      statusMessage: undefined,
       polling: true,
       error: undefined,
       callbackStatus: undefined,
       callbackError: undefined,
-      callbackUrl: ''
+      callbackUrl: '',
     });
     try {
       const res = await oauthApi.startAuth(
@@ -314,20 +488,38 @@ export function OAuthPage() {
         updateProviderState(provider, {
           url: res.url,
           state: undefined,
+          metadata: res.metadata,
           status: 'error',
+          statusMessage: undefined,
           error: message,
-          polling: false
+          polling: false,
         });
         showNotification(message, 'error');
         return;
       }
-      updateProviderState(provider, { url: res.url, state: res.state, status: 'waiting', polling: true });
-      startPolling(provider, res.state);
+      updateProviderState(provider, {
+        url: res.url,
+        state: res.state,
+        metadata: res.metadata,
+        status: 'waiting',
+        statusMessage: undefined,
+        polling: true,
+      });
+      const interval =
+        typeof res.metadata?.interval === 'number' && Number.isFinite(res.metadata.interval)
+          ? res.metadata.interval
+          : undefined;
+      startPolling(provider, res.state, interval);
     } catch (err: unknown) {
       const message = getErrorMessage(err);
-      updateProviderState(provider, { status: 'error', error: message, polling: false });
+      updateProviderState(provider, {
+        status: 'error',
+        statusMessage: undefined,
+        error: message,
+        polling: false,
+      });
       showNotification(
-        `${t(getAuthKey(provider, 'oauth_start_error'))}${message ? ` ${message}` : ''}`,
+        `${getProviderText(provider, 'oauth_start_error', `启动 ${getProviderTitle(provider)} OAuth 失败:`)}${message ? ` ${message}` : ''}`,
         'error'
       );
     }
@@ -342,24 +534,37 @@ export function OAuthPage() {
     );
   };
 
-  const submitCallback = async (provider: OAuthProvider) => {
+  const submitCallback = async (provider: string) => {
     const callbackInput = (states[provider]?.callbackUrl || '').trim();
     if (!callbackInput) {
       showNotification(
-        t(provider === 'xai' ? 'auth_login.xai_callback_required' : 'auth_login.oauth_callback_required'),
+        t(
+          provider === 'xai'
+            ? 'auth_login.xai_callback_required'
+            : 'auth_login.oauth_callback_required'
+        ),
         'warning'
       );
       return;
     }
-    const redirectUrl = resolveCallbackUrl(provider, callbackInput, states[provider]?.state);
+    const redirectUrl = resolveCallbackUrl(
+      isBuiltinProvider(provider) ? provider : 'codex',
+      callbackInput,
+      states[provider]?.state
+    );
     if (!redirectUrl) {
-      showNotification(t(provider === 'xai' ? 'auth_login.xai_callback_state_missing' : 'auth_login.missing_state'), 'warning');
+      showNotification(
+        t(
+          provider === 'xai' ? 'auth_login.xai_callback_state_missing' : 'auth_login.missing_state'
+        ),
+        'warning'
+      );
       return;
     }
     updateProviderState(provider, {
       callbackSubmitting: true,
       callbackStatus: undefined,
-      callbackError: undefined
+      callbackError: undefined,
     });
     try {
       await oauthApi.submitCallback(provider, redirectUrl);
@@ -371,13 +576,13 @@ export function OAuthPage() {
       const errorMessage =
         status === 404
           ? t('auth_login.oauth_callback_upgrade_hint', {
-              defaultValue: 'Please update CLI Proxy API or check the connection.'
+              defaultValue: 'Please update CLI Proxy API or check the connection.',
             })
           : message || undefined;
       updateProviderState(provider, {
         callbackSubmitting: false,
         callbackStatus: 'error',
-        callbackError: errorMessage
+        callbackError: errorMessage,
       });
       const notificationMessage = errorMessage
         ? `${t('auth_login.oauth_callback_error')} ${errorMessage}`
@@ -403,7 +608,7 @@ export function OAuthPage() {
       file,
       fileName: file.name,
       error: undefined,
-      result: undefined
+      result: undefined,
     }));
     event.target.value = '';
   };
@@ -426,7 +631,7 @@ export function OAuthPage() {
         projectId: res.project_id,
         email: res.email,
         location: res.location,
-        authFile: res['auth-file'] ?? res.auth_file
+        authFile: res['auth-file'] ?? res.auth_file,
       };
       setVertexState((prev) => ({ ...prev, loading: false, result }));
       showNotification(t('vertex_import.success'), 'success');
@@ -435,7 +640,7 @@ export function OAuthPage() {
       setVertexState((prev) => ({
         ...prev,
         loading: false,
-        error: message || t('notification.upload_failed')
+        error: message || t('notification.upload_failed'),
       }));
       const notification = message
         ? `${t('notification.upload_failed')}: ${message}`
@@ -444,22 +649,61 @@ export function OAuthPage() {
     }
   };
 
+  const displayProviders: OAuthDisplayProvider[] = [
+    ...PROVIDERS.map((provider) => ({
+      id: provider.id,
+      title: t(provider.titleKey),
+      hint: t(provider.hintKey),
+      urlLabel: t(provider.urlLabelKey),
+      icon: provider.icon,
+      callbackSupported: CALLBACK_SUPPORTED.includes(provider.id),
+    })),
+    ...pluginProviders.map((provider) => ({
+      id: provider.id,
+      title: provider.title,
+      hint: t('auth_login.plugin_oauth_hint', {
+        provider: provider.title,
+        defaultValue: `通过插件认证 ${provider.title}，自动获取并保存认证文件。`,
+      }),
+      urlLabel: t('auth_login.plugin_oauth_url_label', { defaultValue: '授权链接:' }),
+      icon: provider.icon,
+      isPlugin: true,
+      callbackSupported: true,
+    })),
+  ];
+
   return (
     <div className={styles.container}>
       <h1 className={styles.pageTitle}>{t('nav.oauth', { defaultValue: 'OAuth' })}</h1>
 
       <div className={styles.content}>
-        {PROVIDERS.map((provider) => {
+        {pluginLoadError && (
+          <div className="status-badge error">
+            {t('auth_login.plugin_load_error', {
+              message: pluginLoadError,
+              defaultValue: `插件认证入口加载失败: ${pluginLoadError}`,
+            })}
+          </div>
+        )}
+
+        {displayProviders.map((provider) => {
           const state = states[provider.id] || {};
-          const canSubmitCallback = CALLBACK_SUPPORTED.includes(provider.id) && Boolean(state.url);
+          const isDeviceFlow =
+            state.metadata?.flow === 'device' || typeof state.metadata?.user_code === 'string';
+          const userCode =
+            typeof state.metadata?.user_code === 'string' ? state.metadata.user_code : '';
+          const canSubmitCallback =
+            provider.callbackSupported && Boolean(state.url) && !isDeviceFlow;
           const loginButtonLabel =
             state.status === 'success'
               ? t('auth_login.login_another_account')
-              : t(getAuthKey(provider.id, 'oauth_button'));
+              : state.status === 'starting'
+                ? getProviderText(provider.id, 'oauth_status_starting', '正在获取授权链接...')
+                : getProviderText(provider.id, 'oauth_button', `开始 ${provider.title} 登录`);
           const statusBadgeClassName = [
             'status-badge',
             state.status === 'success' ? 'success' : '',
-            state.status === 'error' ? 'error' : ''
+            state.status === 'error' ? 'error' : '',
           ]
             .filter(Boolean)
             .join(' ');
@@ -468,12 +712,18 @@ export function OAuthPage() {
               <Card
                 title={
                   <span className={styles.cardTitle}>
-                    <img
-                      src={getIcon(provider.icon, resolvedTheme)}
-                      alt=""
-                      className={styles.cardTitleIcon}
-                    />
-                    {t(provider.titleKey)}
+                    {getIcon(provider.icon, resolvedTheme) ? (
+                      <img
+                        src={getIcon(provider.icon, resolvedTheme)}
+                        alt=""
+                        className={styles.cardTitleIcon}
+                      />
+                    ) : (
+                      <span className={styles.cardTitleFallbackIcon}>
+                        {provider.title.slice(0, 1).toUpperCase()}
+                      </span>
+                    )}
+                    {provider.title}
                   </span>
                 }
                 extra={
@@ -483,7 +733,7 @@ export function OAuthPage() {
                 }
               >
                 <div className={styles.cardContent}>
-                  <div className={styles.cardHint}>{t(provider.hintKey)}</div>
+                  <div className={styles.cardHint}>{provider.hint}</div>
                   {provider.id === 'gemini-cli' && (
                     <div className={styles.geminiProjectField}>
                       <Input
@@ -495,7 +745,7 @@ export function OAuthPage() {
                         onChange={(e) =>
                           updateProviderState(provider.id, {
                             projectId: e.target.value,
-                            projectIdError: undefined
+                            projectIdError: undefined,
                           })
                         }
                         placeholder={t('auth_login.gemini_cli_project_id_placeholder')}
@@ -504,18 +754,33 @@ export function OAuthPage() {
                   )}
                   {state.url && (
                     <div className={styles.authUrlBox}>
-                      <div className={styles.authUrlLabel}>{t(provider.urlLabelKey)}</div>
+                      <div className={styles.authUrlLabel}>{provider.urlLabel}</div>
                       <div className={styles.authUrlValue}>{state.url}</div>
+                      {userCode && (
+                        <div className={styles.deviceCodeBox}>
+                          <span className={styles.deviceCodeLabel}>
+                            {t('auth_login.plugin_device_code_label', { defaultValue: '设备码' })}
+                          </span>
+                          <code className={styles.deviceCodeValue}>{userCode}</code>
+                        </div>
+                      )}
                       <div className={styles.authUrlActions}>
                         <Button variant="secondary" size="sm" onClick={() => copyLink(state.url!)}>
-                          {t(getAuthKey(provider.id, 'copy_link'))}
+                          {getProviderText(provider.id, 'copy_link', '复制链接')}
                         </Button>
+                        {userCode && (
+                          <Button variant="secondary" size="sm" onClick={() => copyLink(userCode)}>
+                            {t('auth_login.plugin_copy_device_code', {
+                              defaultValue: '复制设备码',
+                            })}
+                          </Button>
+                        )}
                         <Button
                           variant="secondary"
                           size="sm"
                           onClick={() => window.open(state.url, '_blank', 'noopener,noreferrer')}
                         >
-                          {t(getAuthKey(provider.id, 'open_link'))}
+                          {getProviderText(provider.id, 'open_link', '打开链接')}
                         </Button>
                       </div>
                     </div>
@@ -538,7 +803,7 @@ export function OAuthPage() {
                           updateProviderState(provider.id, {
                             callbackUrl: e.target.value,
                             callbackStatus: undefined,
-                            callbackError: undefined
+                            callbackError: undefined,
                           })
                         }
                         placeholder={t(
@@ -572,10 +837,26 @@ export function OAuthPage() {
                   {state.status && state.status !== 'idle' && (
                     <div className={statusBadgeClassName}>
                       {state.status === 'success'
-                        ? t(getAuthKey(provider.id, 'oauth_status_success'))
+                        ? getProviderText(
+                            provider.id,
+                            'oauth_status_success',
+                            `${provider.title} 认证成功！`
+                          )
                         : state.status === 'error'
-                          ? `${t(getAuthKey(provider.id, 'oauth_status_error'))} ${state.error || ''}`
-                          : t(getAuthKey(provider.id, 'oauth_status_waiting'))}
+                          ? `${getProviderText(provider.id, 'oauth_status_error', '认证失败:')} ${state.error || ''}`
+                          : state.status === 'starting'
+                            ? getProviderText(
+                                provider.id,
+                                'oauth_status_starting',
+                                '正在获取授权链接...'
+                              )
+                            : state.statusMessage
+                              ? `${getProviderText(provider.id, 'oauth_status_waiting', '等待认证中...')} ${state.statusMessage}`
+                              : getProviderText(
+                                  provider.id,
+                                  'oauth_status_waiting',
+                                  '等待认证中...'
+                                )}
                     </div>
                   )}
                   {state.status === 'success' && (
@@ -614,7 +895,7 @@ export function OAuthPage() {
               onChange={(e) =>
                 setVertexState((prev) => ({
                   ...prev,
-                  location: e.target.value
+                  location: e.target.value,
                 }))
               }
               placeholder={t('vertex_import.location_placeholder')}
@@ -642,18 +923,16 @@ export function OAuthPage() {
                 onChange={handleVertexFileChange}
               />
             </div>
-            {vertexState.error && (
-              <div className="status-badge error">
-                {vertexState.error}
-              </div>
-            )}
+            {vertexState.error && <div className="status-badge error">{vertexState.error}</div>}
             {vertexState.result && (
               <div className={styles.connectionBox}>
                 <div className={styles.connectionLabel}>{t('vertex_import.result_title')}</div>
                 <div className={styles.keyValueList}>
                   {vertexState.result.projectId && (
                     <div className={styles.keyValueItem}>
-                      <span className={styles.keyValueKey}>{t('vertex_import.result_project')}</span>
+                      <span className={styles.keyValueKey}>
+                        {t('vertex_import.result_project')}
+                      </span>
                       <span className={styles.keyValueValue}>{vertexState.result.projectId}</span>
                     </div>
                   )}
@@ -665,7 +944,9 @@ export function OAuthPage() {
                   )}
                   {vertexState.result.location && (
                     <div className={styles.keyValueItem}>
-                      <span className={styles.keyValueKey}>{t('vertex_import.result_location')}</span>
+                      <span className={styles.keyValueKey}>
+                        {t('vertex_import.result_location')}
+                      </span>
                       <span className={styles.keyValueValue}>{vertexState.result.location}</span>
                     </div>
                   )}

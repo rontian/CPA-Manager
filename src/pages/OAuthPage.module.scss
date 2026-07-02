@@ -15,6 +15,19 @@
   height: 24px;
 }
 
+.cardTitleFallbackIcon {
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-sm;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba($primary-color, 0.12);
+  color: var(--primary-color);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .pageTitle {
   font-size: 28px;
   font-weight: 700;
@@ -142,6 +155,30 @@
   align-items: center;
   gap: $spacing-sm;
   margin-top: $spacing-sm;
+}
+
+.deviceCodeBox {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-sm;
+  flex-wrap: wrap;
+  margin-top: $spacing-sm;
+}
+
+.deviceCodeLabel {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.deviceCodeValue {
+  border: 1px solid var(--border-color);
+  border-radius: $radius-sm;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .successActions {

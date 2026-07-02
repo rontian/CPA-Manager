@@ -23,12 +23,13 @@ git merge main
 | 扩展                              | 主要页面/模块                                        | 重点文件                                                                                                                                                           | 合并关注点                                                                                                                        |
 | --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------- |
 | API Key 别名和 Usage Service 展示 | Usage/Monitoring 相关页面                            | `src/features/monitoring/*`、`src/services/api/usageService.ts`、`usage-service/*`、`Makefile`                                                                      | 官方若改 Usage 数据结构，确认别名映射、历史统计和开发命令仍把 `config.json`、`data/usage.sqlite` 固定到仓库根目录                 |
-| OAuth 模型别名                    | Auth Files 模型别名编辑                              | `src/pages/AuthFilesOAuthModelAliasEditPage.tsx`、`src/services/api/authFiles.ts`、`src/types/oauth.ts`、i18n                                                      | 合并时确认 auth JSON `model-aliases` 读写、图形化别名编辑、升级提示仍可用                                                         |
-| OAuth 排除模型                    | Auth Files 排除模型编辑                              | `src/pages/AuthFilesOAuthExcludedEditPage.tsx`、`src/services/api/authFiles.ts`、i18n                                                                              | 官方若改认证文件接口，确认排除模型仍 patch 到正确字段                                                                             |
+| OAuth 模型别名                    | Auth Files 模型别名编辑                              | `src/pages/AuthFilesOAuthModelAliasEditPage.tsx`、`src/services/api/authFiles.ts`、`src/types/oauth.ts`、i18n                                                      | 合并时确认 auth JSON `model-aliases` 读写、图形化别名编辑、升级提示仍可用；provider 自动补全不能把 `oauth-model-alias` 这类配置端点名当成 provider |
+| OAuth 排除模型                    | Auth Files 排除模型编辑                              | `src/pages/AuthFilesOAuthExcludedEditPage.tsx`、`src/services/api/authFiles.ts`、i18n                                                                              | 官方若改认证文件接口，确认排除模型仍 patch 到正确字段；provider 自动补全不能把 `oauth-excluded-models` 这类配置端点名当成 provider              |
 | OpenAI 兼容提供商模型配置         | AI Providers                                         | `src/pages/AiProvidersOpenAIEditPage.tsx`、`src/pages/AiProvidersOpenAIModelsPage.tsx`、`src/services/api/providers.ts`                                            | 保留 provider/model alias、模型发现、OpenAI-compatible provider key 规则                                                          |
 | 图片/视频相关配置                 | 配置页、provider 模型识别                            | `src/pages/ConfigPage.tsx`、`src/i18n/locales/*`、API services                                                                                                     | 官方新增图片/视频配置项时，避免覆盖本地启发式模型关键词和开关说明                                                                 |
 | Auto Router                       | Auto Router 页面、预设管理、模型选择策略、角色候选池 | `src/pages/AutoRouterPage.tsx`、`src/features/autoRouter/*`、`src/services/api/autoRouter.ts`、`src/router/MainRoutes.tsx`、`src/components/layout/MainLayout.tsx` | 官方若新增自动路由或模型策略页面，需要判断合并、迁移或保留本地实现；候选池 UI 必须兼容旧的单 provider/model 角色配置              |
 | 模型能力清单                      | 手动维护的主流模型能力参考                           | `src/pages/ModelCatalogPage.tsx`、`src/features/modelCatalog/*`、`src/router/MainRoutes.tsx`、`src/components/layout/MainLayout.tsx`                               | 清单数据只属于 CPA-Manager 前端静态展示和搜索，不依赖 CLIProxyAPI；如果引入 AI 辅助刷新，只能生成待审核补丁，不能直接覆盖静态清单 |
+| 插件 OAuth 登录                   | OAuth 登录页动态发现并渲染支持认证的插件             | `src/pages/OAuthPage.tsx`、`src/services/api/oauth.ts`、`src/services/api/plugins.ts`、`src/i18n/locales/*`                                                          | 不要为单个插件硬编码独立认证页；通过 `/plugins` 的 `effective_enabled/supports_oauth/oauth_provider` 判断入口是否显示             |
 
 ## 高风险文件
 
@@ -40,7 +41,10 @@ git merge main
 - `src/services/api/providers.ts`
 - `src/services/api/authFiles.ts`
 - `src/services/api/autoRouter.ts`
+- `src/services/api/oauth.ts`
+- `src/services/api/plugins.ts`
 - `src/pages/AutoRouterPage.tsx`
+- `src/pages/OAuthPage.tsx`
 - `src/features/autoRouter/rolePresets.ts`
 - `src/pages/AuthFilesOAuthModelAliasEditPage.tsx`
 - `src/pages/AuthFilesOAuthExcludedEditPage.tsx`

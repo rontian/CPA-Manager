@@ -2,12 +2,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mocks } = vi.hoisted(() => ({
   mocks: {
+    get: vi.fn(),
     postForm: vi.fn(),
   },
 }));
 
 vi.mock('./client', () => ({
   apiClient: {
+    get: mocks.get,
     postForm: mocks.postForm,
   },
 }));
@@ -15,6 +17,7 @@ vi.mock('./client', () => ({
 import { authFilesApi } from './authFiles';
 
 beforeEach(() => {
+  mocks.get.mockReset();
   mocks.postForm.mockReset();
 });
 
@@ -134,7 +137,7 @@ describe('authFilesApi save auth file upload contracts', () => {
         type: 'codex',
         access_token: 'token',
       })
-      ).rejects.toThrow('Invalid auth payload');
+    ).rejects.toThrow('Invalid auth payload');
   });
 
   it('saveJsonObject throws when backend reports explicit error status without upload counters', async () => {
@@ -152,5 +155,33 @@ describe('authFilesApi save auth file upload contracts', () => {
         access_token: 'token',
       })
     ).rejects.toThrow('Upload failed');
+  });
+});
+
+describe('authFilesApi OAuth provider configuration contracts', () => {
+  it('getOauthExcludedModels ignores config wrapper provider keys', async () => {
+    mocks.get.mockResolvedValue({
+      'oauth-excluded-models': {
+        'oauth-excluded-models': ['not-a-provider-model'],
+        'github-copilot': ['gpt-4.1'],
+      },
+    });
+
+    await expect(authFilesApi.getOauthExcludedModels()).resolves.toEqual({
+      'github-copilot': ['gpt-4.1'],
+    });
+  });
+
+  it('getOauthModelAlias ignores config wrapper provider keys', async () => {
+    mocks.get.mockResolvedValue({
+      'oauth-model-alias': {
+        'oauth-model-alias': [{ name: 'bad', alias: 'bad-alias' }],
+        'github-copilot': [{ name: 'gpt-4.1', alias: 'copilot-fast', fork: true }],
+      },
+    });
+
+    await expect(authFilesApi.getOauthModelAlias()).resolves.toEqual({
+      'github-copilot': [{ name: 'gpt-4.1', alias: 'copilot-fast', fork: true }],
+    });
   });
 });

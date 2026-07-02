@@ -11,10 +11,16 @@ import {
   useNotificationStore,
   useModelsStore,
   useThemeStore,
+  useUsageServiceStore,
 } from '@/stores';
 import { configApi, versionApi } from '@/services/api';
 import { apiKeysApi } from '@/services/api/apiKeys';
+import {
+  LEGACY_USAGE_SERVICE_LAST_CPA_BASE_KEY,
+  USAGE_SERVICE_LAST_CPA_BASE_KEY,
+} from '@/services/api/usageService';
 import { classifyModels } from '@/utils/models';
+import { normalizeApiBase } from '@/utils/connection';
 import { STORAGE_KEY_AUTH } from '@/utils/constants';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import iconGemini from '@/assets/icons/gemini.svg';
@@ -83,6 +89,7 @@ export function SystemPage() {
   const modelsLoading = useModelsStore((state) => state.loading);
   const modelsError = useModelsStore((state) => state.error);
   const fetchModelsFromStore = useModelsStore((state) => state.fetchModels);
+  const usageServiceEnabled = useUsageServiceStore((state) => state.enabled);
 
   const [modelStatus, setModelStatus] = useState<{
     type: 'success' | 'warning' | 'error' | 'muted';
@@ -107,6 +114,18 @@ export function SystemPage() {
   const requestLogEnabled = config?.requestLog ?? false;
   const requestLogDirty = requestLogDraft !== requestLogEnabled;
   const canEditRequestLog = auth.connectionStatus === 'connected' && Boolean(config);
+  const modelFetchBase = useMemo(() => {
+    if (!usageServiceEnabled) return auth.apiBase;
+    try {
+      const stored =
+        localStorage.getItem(USAGE_SERVICE_LAST_CPA_BASE_KEY) ||
+        localStorage.getItem(LEGACY_USAGE_SERVICE_LAST_CPA_BASE_KEY) ||
+        '';
+      return normalizeApiBase(stored) || auth.apiBase;
+    } catch {
+      return auth.apiBase;
+    }
+  }, [auth.apiBase, usageServiceEnabled]);
 
   const appVersion = __APP_VERSION__ || t('system_info.version_unknown');
   const apiVersion = auth.serverVersion || t('system_info.version_unknown');
@@ -192,7 +211,7 @@ export function SystemPage() {
     try {
       const apiKeys = await resolveApiKeysForModels();
       const primaryKey = apiKeys[0];
-      const list = await fetchModelsFromStore(auth.apiBase, primaryKey, forceRefresh);
+      const list = await fetchModelsFromStore(modelFetchBase, primaryKey, forceRefresh);
       const hasModels = list.length > 0;
       setModelStatus({
         type: hasModels ? 'success' : 'warning',
@@ -310,7 +329,8 @@ export function SystemPage() {
         showNotification(t('system_info.manager_version_is_latest'), 'success');
       }
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+      const message =
+        error instanceof Error ? error.message : typeof error === 'string' ? error : '';
       const suffix = message ? `: ${message}` : '';
       showNotification(`${t('system_info.manager_version_check_error')}${suffix}`, 'error');
     } finally {

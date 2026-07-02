@@ -49,6 +49,7 @@ type AuthFileBatchDeleteResult = {
 };
 
 export const AUTH_FILE_INVALID_JSON_OBJECT_ERROR = 'AUTH_FILE_INVALID_JSON_OBJECT';
+const OAUTH_PROVIDER_CONFIG_KEYS = new Set(['oauth-excluded-models', 'oauth-model-alias']);
 
 const getStatusCode = (err: unknown): number | undefined => {
   if (!err || typeof err !== 'object') return undefined;
@@ -341,7 +342,7 @@ const normalizeOauthExcludedModels = (payload: unknown): Record<string, string[]
     const key = String(provider ?? '')
       .trim()
       .toLowerCase();
-    if (!key) return;
+    if (!key || OAUTH_PROVIDER_CONFIG_KEYS.has(key)) return;
 
     const rawList = Array.isArray(models)
       ? models
@@ -379,7 +380,7 @@ const normalizeOauthModelAlias = (payload: unknown): Record<string, OAuthModelAl
     const key = String(channel ?? '')
       .trim()
       .toLowerCase();
-    if (!key) return;
+    if (!key || OAUTH_PROVIDER_CONFIG_KEYS.has(key)) return;
     if (!Array.isArray(mappings)) return;
 
     const seen = new Set<string>();

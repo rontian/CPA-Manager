@@ -26,12 +26,19 @@ const OAUTH_PROVIDER_PRESETS = [
   'antigravity',
   'claude',
   'codex',
+  'github-copilot',
   'qwen',
   'kimi',
   'iflow',
 ];
 
-const OAUTH_PROVIDER_EXCLUDES = new Set(['all', 'unknown', 'empty']);
+const OAUTH_PROVIDER_EXCLUDES = new Set([
+  'all',
+  'unknown',
+  'empty',
+  'oauth-excluded-models',
+  'oauth-model-alias',
+]);
 
 const normalizeProviderKey = (value: string) => value.trim().toLowerCase();
 
